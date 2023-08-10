@@ -69,7 +69,9 @@ source=(
   identity-icons-brand.svg
 )
 validpgpkeys=(
-  '14F26682D0916CDD81E37B6D61B7B526D98F0353'  # Mozilla Software Releases <release@mozilla.com>
+  # Mozilla Software Releases <release@mozilla.com>
+  # https://blog.mozilla.org/security/2023/05/11/updated-gpg-key-for-signing-firefox-releases/
+  14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
 sha256sums=('6708ab24a748de336aff4789f97f248452a46117e86bb6b4b9746768e52fb114'
             'SKIP'
