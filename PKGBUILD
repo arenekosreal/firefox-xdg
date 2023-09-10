@@ -150,6 +150,10 @@ build() {
   export MOZ_ENABLE_FULL_SYMBOLS=1
   export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE=pip
 
+  # malloc_usable_size is used in various parts of the codebase
+  CFLAGS="${CFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
+  CXXFLAGS="${CXXFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
+
   # LTO needs more open files
   ulimit -n 4096
 
