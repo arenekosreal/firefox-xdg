@@ -14,7 +14,7 @@ license=(
   MPL
 )
 depends=(
-  dbus-glib
+  dbus
   ffmpeg
   gtk3
   libpulse
