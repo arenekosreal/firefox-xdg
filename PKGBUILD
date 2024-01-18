@@ -244,7 +244,7 @@ END
     "$pkgdir/usr/share/icons/hicolor/symbolic/apps/$pkgname-symbolic.svg"
 
   install -Dvm644 ../$pkgname.desktop \
-    "$pkgdir/usr/share/applications/$pkgname.desktop"
+    "$pkgdir/usr/share/applications/${pkgname//-/}.desktop"
 
   # Install a wrapper to avoid confusion about binary path
   install -Dvm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<END
@@ -265,7 +265,7 @@ END
   local sprovider="$pkgdir/usr/share/gnome-shell/search-providers/$pkgname.search-provider.ini"
   install -Dvm644 /dev/stdin "$sprovider" <<END
 [Shell Search Provider]
-DesktopId=$pkgname.desktop
+DesktopId=${pkgname//-/}.desktop
 BusName=org.mozilla.${pkgname//-/}.SearchProvider
 ObjectPath=/org/mozilla/${pkgname//-/}/SearchProvider
 Version=2
