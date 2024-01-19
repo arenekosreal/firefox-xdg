@@ -28,7 +28,6 @@ makedepends=(
   cbindgen
   clang
   diffutils
-  dump_syms
   imake
   inetutils
   jack
@@ -57,11 +56,9 @@ optdepends=(
   'xdg-desktop-portal: Screensharing with Wayland'
 )
 options=(
-  !debug
   !emptydirs
   !lto
   !makeflags
-  !strip
 )
 source=(
   https://archive.mozilla.org/pub/firefox/releases/$pkgver/source/firefox-$pkgver.source.tar.xz{,.asc}
@@ -111,6 +108,7 @@ ac_add_options --enable-hardening
 ac_add_options --enable-optimize
 ac_add_options --enable-rust-simd
 ac_add_options --enable-linker=lld
+ac_add_options --disable-install-strip
 ac_add_options --disable-elf-hack
 ac_add_options --disable-bootstrap
 ac_add_options --with-wasi-sysroot=/usr/share/wasi-sysroot
@@ -148,7 +146,6 @@ build() {
   export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE=pip
   export MOZBUILD_STATE_PATH="$srcdir/mozbuild"
   export MOZ_BUILD_DATE="$(date -u${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH} +%Y%m%d%H%M%S)"
-  export MOZ_ENABLE_FULL_SYMBOLS=1
   export MOZ_NOSPAM=1
 
   # malloc_usable_size is used in various parts of the codebase
@@ -189,9 +186,6 @@ ac_add_options --with-pgo-profile-path=${PWD@Q}/merged.profdata
 ac_add_options --with-pgo-jarlog=${PWD@Q}/jarlog
 END
   ./mach build
-
-  echo "Building symbol archive..."
-  ./mach buildsymbols
 }
 
 package() {
@@ -270,13 +264,6 @@ BusName=org.mozilla.${pkgname//-/}.SearchProvider
 ObjectPath=/org/mozilla/${pkgname//-/}/SearchProvider
 Version=2
 END
-
-  export SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE="$startdir/.crash-stats-api.token"
-  if [[ -f $SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE ]]; then
-    make -C obj uploadsymbols
-  else
-    cp -fvt "$startdir" obj/dist/*crashreporter-symbols-full.tar.zst
-  fi
 }
 
 # vim:set sw=2 sts=-1 et:
