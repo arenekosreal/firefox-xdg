@@ -3,8 +3,8 @@
 # Contributor: Jakub Schmidtke <sjakub@gmail.com>
 
 pkgname=firefox
-pkgver=121.0.1
-pkgrel=2
+pkgver=122.0
+pkgrel=1
 pkgdesc="Standalone web browser from mozilla.org"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
@@ -70,11 +70,11 @@ validpgpkeys=(
   # https://blog.mozilla.org/security/2023/05/11/updated-gpg-key-for-signing-firefox-releases/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('b3a4216e01eaeb9a7c6ef4659d8dcd956fbd90a78a8279ee3a598881e63e49ce'
+sha256sums=('b84815a90e147965e4c0b50599c85b1022ab0fce42105e5ef45c630dcca5dec3'
             'SKIP'
             '1f241fdc619f92a914c75aece7c7c717401d7467c9a306458e106b05f34e5044'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9')
-b2sums=('c9931d38bb9c612000409ed54b2fbb190cabcb714cd559152f2f645a8a3a82934874d31e40fc298dca765dac94e4e0927b125e14cee325484ba0f9b1ed2cdc55'
+b2sums=('7252cd58fef9f5fcb504c8c9f885567109c05e6ec92157459cc384edc6935adb206e3be0b805aeaa37dbd72656c3243db1291b745dd0f705f37a61319a4dc820'
         'SKIP'
         'd07557840097dd48a60c51cc5111950781e1c6ce255557693bd11306c7a9258b2a82548329762148f117b2295145f9e66e0483a18e2fe09c5afcffed2e4b8628'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34')
