@@ -8,11 +8,7 @@ pkgrel=1
 pkgdesc="Standalone web browser from mozilla.org"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
-license=(
-  GPL
-  LGPL
-  MPL
-)
+license=(MPL-2.0)
 depends=(
   dbus
   ffmpeg
