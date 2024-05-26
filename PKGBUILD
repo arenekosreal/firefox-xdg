@@ -10,14 +10,34 @@ url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
 license=(MPL-2.0)
 depends=(
+  alsa-lib
+  at-spi2-core
+  bash
+  cairo
   dbus
   ffmpeg
+  fontconfig
+  freetype2
+  gcc-libs
+  gdk-pixbuf2
+  glib2
+  glibc
   gtk3
+  hicolor-icon-theme
   libpulse
+  libx11
+  libxcb
+  libxcomposite
+  libxdamage
+  libxext
+  libxfixes
+  libxrandr
   libxss
   libxt
   mime-types
+  nspr
   nss
+  pango
   ttf-font
 )
 makedepends=(
@@ -47,7 +67,6 @@ optdepends=(
   'hunspell-en_US: Spell checking, American English'
   'libnotify: Notification integration'
   'networkmanager: Location detection via available WiFi networks'
-  'pulseaudio: Audio support'
   'speech-dispatcher: Text-to-Speech'
   'xdg-desktop-portal: Screensharing with Wayland'
 )
@@ -122,7 +141,7 @@ ac_add_options --with-distribution-id=org.archlinux
 ac_add_options --with-unsigned-addon-scopes=app,system
 ac_add_options --allow-addon-sideload
 export MOZILLA_OFFICIAL=1
-export MOZ_APP_REMOTINGNAME=${pkgname//-/}
+export MOZ_APP_REMOTINGNAME=$pkgname
 
 # Keys
 ac_add_options --with-google-location-service-api-keyfile=${PWD@Q}/google-api-key
@@ -154,6 +173,10 @@ build() {
   CFLAGS="${CFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
   CXXFLAGS="${CXXFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
 
+  # Breaks compilation since https://bugzilla.mozilla.org/show_bug.cgi?id=1896066
+  CFLAGS="${CFLAGS/-fexceptions/}"
+  CXXFLAGS="${CXXFLAGS/-fexceptions/}"
+
   # LTO needs more open files
   ulimit -n 4096
 
@@ -162,7 +185,7 @@ build() {
   cat >.mozconfig ../mozconfig - <<END
 ac_add_options --enable-profile-generate=cross
 END
-  ./mach build
+  ./mach build --priority normal
 
   echo "Profiling instrumented browser..."
   ./mach package
@@ -178,7 +201,7 @@ END
   test -s jarlog
 
   echo "Removing instrumented browser..."
-  ./mach clobber
+  ./mach clobber objdir
 
   echo "Building optimized browser..."
   cat >.mozconfig ../mozconfig - <<END
@@ -187,7 +210,7 @@ ac_add_options --enable-profile-use=cross
 ac_add_options --with-pgo-profile-path=${PWD@Q}/merged.profdata
 ac_add_options --with-pgo-jarlog=${PWD@Q}/jarlog
 END
-  ./mach build
+  ./mach build --priority normal
 }
 
 package() {
@@ -240,7 +263,7 @@ END
     "$pkgdir/usr/share/icons/hicolor/symbolic/apps/$pkgname-symbolic.svg"
 
   install -Dvm644 ../$pkgname.desktop \
-    "$pkgdir/usr/share/applications/${pkgname//-/}.desktop"
+    "$pkgdir/usr/share/applications/$pkgname.desktop"
 
   # Install a wrapper to avoid confusion about binary path
   install -Dvm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<END
@@ -261,9 +284,9 @@ END
   local sprovider="$pkgdir/usr/share/gnome-shell/search-providers/$pkgname.search-provider.ini"
   install -Dvm644 /dev/stdin "$sprovider" <<END
 [Shell Search Provider]
-DesktopId=${pkgname//-/}.desktop
-BusName=org.mozilla.${pkgname//-/}.SearchProvider
-ObjectPath=/org/mozilla/${pkgname//-/}/SearchProvider
+DesktopId=$pkgname.desktop
+BusName=org.mozilla.${pkgname//-/_}.SearchProvider
+ObjectPath=/org/mozilla/${pkgname//-/_}/SearchProvider
 Version=2
 END
 }
