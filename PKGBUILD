@@ -5,7 +5,7 @@
 pkgname=firefox
 pkgver=127.0
 pkgrel=1
-pkgdesc="Standalone web browser from mozilla.org"
+pkgdesc="Fast, Private & Safe Web Browser"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
 license=(MPL-2.0)
