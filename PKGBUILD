@@ -45,7 +45,6 @@ makedepends=(
   clang
   diffutils
   imake
-  inetutils
   jack
   lld
   llvm
