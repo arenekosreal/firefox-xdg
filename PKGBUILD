@@ -222,10 +222,6 @@ pref("extensions.autoDisableScopes", 11);
 
 // Enable GNOME Shell search provider
 pref("browser.gnome-search-provider.enabled", true);
-
-// Use our own captive portal detection
-pref("captivedetect.canonicalURL", "http://ping.archlinux.org/nm-check.txt");
-pref("captivedetect.canonicalContent", "NetworkManager is online\\n");
 END
 
   local distini="$pkgdir/usr/lib/$pkgname/distribution/distribution.ini"
