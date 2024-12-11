@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>org.mozilla.firefox</id>
-  <launchable type="desktop-id">org.mozilla.firefox.desktop</launchable>
+  <launchable type="desktop-id">firefox.desktop</launchable>
   <provides>
     <binary>firefox</binary>
     <mediatype>application/json</mediatype>
@@ -67,3 +67,4 @@
     </screenshot>
   </screenshots>
 </component>
+<!-- vim:set sw=2 sts=-1 et: -->

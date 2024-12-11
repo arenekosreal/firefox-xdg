@@ -4,7 +4,7 @@
 
 pkgname=firefox
 pkgver=133.0.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Fast, Private & Safe Web Browser"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
@@ -74,12 +74,11 @@ options=(
   !lto
   !makeflags
 )
-_dbusname=org.mozilla.${pkgname//-/_}
 source=(
   https://archive.mozilla.org/pub/firefox/releases/$pkgver/source/firefox-$pkgver.source.tar.xz{,.asc}
-  $_dbusname-symbolic.svg
-  $_dbusname.desktop
-  $_dbusname.metainfo.xml
+  $pkgname-symbolic.svg
+  $pkgname.desktop
+  org.mozilla.$pkgname.metainfo.xml
   0001-Install-under-remoting-name.patch
 )
 validpgpkeys=(
@@ -90,14 +89,14 @@ validpgpkeys=(
 sha256sums=('f134a5420200bb03ab460f9d2867507c0edb222ce73faf4064cdbea02a0aca1b'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
-            '9f74078a47626660382f36afa5be95ccc0a50f5a44cb3624061c3086feaf7d0a'
-            '64048c13122cb50d2479a9fa1ed718b1890b974502d6c73a08c4ee5db60d893a'
+            '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
+            '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314')
 b2sums=('e686408397a886e36ead739851ec190f108db2bda92b7147ec16c12233459dc23ab256ba125fb8902fb2a855ea76d9cb02e6c55ea62e7639f8700dba6bae9acb'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
-        '4aec1e968f952ba692ca86bec1b5a2fe88dba158ff53f2aa680dd307633fdde656265221330bd588457deddd24cd9ca586aeeff13b59ca2fe4fce0f59016e5d9'
-        '432e6eebddd86fb8d49857757bd84b70174a6f83e8f8b8f4044b159abff6bd40507320bf7ae3e09a5aabf831bd1942de79d8ecfb452cac3c8c669dfc4f51a1ff'
+        '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
+        '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
@@ -246,18 +245,18 @@ END
   local i theme=official
   for i in 16 22 24 32 48 64 128 256; do
     install -Dvm644 browser/branding/$theme/default$i.png \
-      "$pkgdir/usr/share/icons/hicolor/${i}x${i}/apps/$_dbusname.png"
+      "$pkgdir/usr/share/icons/hicolor/${i}x${i}/apps/$pkgname.png"
   done
   install -Dvm644 browser/branding/$theme/content/about-logo.png \
-    "$pkgdir/usr/share/icons/hicolor/192x192/apps/$_dbusname.png"
+    "$pkgdir/usr/share/icons/hicolor/192x192/apps/$pkgname.png"
   install -Dvm644 browser/branding/$theme/content/about-logo@2x.png \
-    "$pkgdir/usr/share/icons/hicolor/384x384/apps/$_dbusname.png"
+    "$pkgdir/usr/share/icons/hicolor/384x384/apps/$pkgname.png"
   install -Dvm644 browser/branding/$theme/content/about-logo.svg \
-    "$pkgdir/usr/share/icons/hicolor/scalable/apps/$_dbusname.svg"
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/$pkgname.svg"
 
-  install -Dvm644 ../$_dbusname-symbolic.svg -t "$pkgdir/usr/share/icons/hicolor/symbolic/apps"
-  install -Dvm644 ../$_dbusname.desktop -t "$pkgdir/usr/share/applications"
-  install -Dvm644 ../$_dbusname.metainfo.xml -t "$pkgdir/usr/share/metainfo"
+  install -Dvm644 ../$pkgname-symbolic.svg -t "$pkgdir/usr/share/icons/hicolor/symbolic/apps"
+  install -Dvm644 ../$pkgname.desktop -t "$pkgdir/usr/share/applications"
+  install -Dvm644 ../org.mozilla.$pkgname.metainfo.xml -t "$pkgdir/usr/share/metainfo"
 
   # Install a wrapper to avoid confusion about binary path
   install -Dvm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<END
@@ -275,20 +274,13 @@ END
     ln -srfv "$pkgdir/usr/lib/libnssckbi.so" "$nssckbi"
   fi
 
-  local sprovider="$pkgdir/usr/share/gnome-shell/search-providers/$_dbusname.search-provider.ini"
+  local sprovider="$pkgdir/usr/share/gnome-shell/search-providers/$pkgname.search-provider.ini"
   install -Dvm644 /dev/stdin "$sprovider" <<END
 [Shell Search Provider]
-DesktopId=$_dbusname.desktop
-BusName=$_dbusname.SearchProvider
+DesktopId=$pkgname.desktop
+BusName=org.mozilla.${pkgname//-/_}.SearchProvider
 ObjectPath=/org/mozilla/${pkgname//-/_}/SearchProvider
 Version=2
-END
-
-  local dservice="$pkgdir/usr/share/dbus-1/services/$_dbusname.service"
-  install -Dvm644 /dev/stdin "$dservice" <<END
-[D-BUS Service]
-Name=$_dbusname
-Exec=/usr/lib/$pkgname/firefox --dbus-service /usr/lib/$pkgname/firefox
 END
 }
 
