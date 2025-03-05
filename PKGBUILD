@@ -123,7 +123,7 @@ prepare() {
   patch -Np1 -i ../0001-Install-under-remoting-name.patch
 
   patch -Np1 -i ../firefox-xdg-support.diff
-  sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=6.1.1|g' ./python/sites/mach.txt
+  sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
   sed -i 's|vendored:third_party/python/typing_extensions||g' ./python/sites/mach.txt
 
