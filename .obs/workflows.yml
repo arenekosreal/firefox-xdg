@@ -1,0 +1,21 @@
+pull_request:
+  steps:
+    - branch_package:
+        source_project: home:ZhangHua
+        source_package: firefox-xdg
+        target_project: home:ZhangHua:firefox-xdg
+  filters:
+    event: pull_request
+push:
+  steps:
+    - trigger_services:
+        project: home:ZhangHua
+        package: firefox-xdg
+    - rebuild_package:
+        project: home:ZhangHua
+        package: firefox-xdg
+  filters:
+    event: push
+    branches:
+      only:
+        - main
