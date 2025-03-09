@@ -1,0 +1,456 @@
+diff --git a/toolkit/moz.build b/toolkit/moz.build
+--- a/toolkit/moz.build
++++ b/toolkit/moz.build
+@@ -71,10 +71,13 @@
+ 
+ TEST_HARNESS_FILES.testing.mochitest.browser.toolkit.crashreporter.test.browser += [
+     "crashreporter/test/browser/crashreport.sjs",
+ ]
+ 
++if CONFIG["ENABLE_TESTS"]:
++    DIRS += ["tests/gtest"]
++
+ with Files("docs/**"):
+     BUG_COMPONENT = ("Toolkit", "General")
+ 
+ with Files("locales-preview/**"):
+     BUG_COMPONENT = ("Toolkit", "General")
+diff --git a/toolkit/xre/nsXREDirProvider.h b/toolkit/xre/nsXREDirProvider.h
+--- a/toolkit/xre/nsXREDirProvider.h
++++ b/toolkit/xre/nsXREDirProvider.h
+@@ -17,16 +17,12 @@
+ #ifdef MOZ_BACKGROUNDTASKS
+ #  include "mozilla/BackgroundTasks.h"
+ #endif
+ 
+ // {5573967d-f6cf-4c63-8e0e-9ac06e04d62b}
+-#define NS_XREDIRPROVIDER_CID                        \
+-  {                                                  \
+-    0x5573967d, 0xf6cf, 0x4c63, {                    \
+-      0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b \
+-    }                                                \
+-  }
++#define NS_XREDIRPROVIDER_CID \
++  {0x5573967d, 0xf6cf, 0x4c63, {0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b}}
+ #define NS_XREDIRPROVIDER_CONTRACTID "@mozilla.org/xre/directory-provider;1"
+ 
+ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
+                                public nsIXREDirProvider,
+                                public nsIProfileStartup {
+@@ -72,10 +68,22 @@
+     return GetUserDataDirectory(aFile, true);
+   }
+ 
+   static nsresult GetUserDataDirectory(nsIFile** aFile, bool aLocal);
+ 
++  static nsresult AppendLegacyOrXDGCachePath(const char* aHomeDir,
++                                             nsIFile** aFile);
++  static nsresult AppendLegacyOrXDGHomePath(const char* aHomeDir,
++                                            nsIFile** aFile);
++  static nsresult AppendLegacyOrXDGUserNativeManifest(nsIFile* aFile);
++
++  static bool IsForceLegacyHome();
++
++  static bool LegacyHomeExists(const char* aHomeDir, nsIFile** aFile);
++
++  static nsresult GetXDGConfigHome(const char* aHomeDir, nsIFile** aFile);
++
+   /* make sure you clone it, if you need to do stuff to it */
+   nsIFile* GetGREDir() { return mGREDir; }
+   nsIFile* GetGREBinDir() { return mGREBinDir; }
+   nsIFile* GetAppDir() {
+     if (mXULAppDir) return mXULAppDir;
+@@ -111,10 +119,11 @@
+ 
+  private:
+   nsresult GetFilesInternal(const char* aProperty,
+                             nsISimpleEnumerator** aResult);
+   static nsresult GetUserDataDirectoryHome(nsIFile** aFile, bool aLocal);
++  static nsresult GetNativeUserManifestsDirectory(nsIFile** aFile);
+   static nsresult GetSysUserExtensionsDirectory(nsIFile** aFile);
+ #if defined(XP_UNIX) || defined(XP_MACOSX)
+   static nsresult GetSystemExtensionsDirectory(nsIFile** aFile);
+ #endif
+   static nsresult EnsureDirectoryExists(nsIFile* aDirectory);
+diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
+--- a/toolkit/xre/nsXREDirProvider.cpp
++++ b/toolkit/xre/nsXREDirProvider.cpp
+@@ -10,10 +10,11 @@
+ #endif
+ 
+ #include "jsapi.h"
+ #include "xpcpublic.h"
+ #include "prprf.h"
++#include "prenv.h"
+ 
+ #include "nsIAppStartup.h"
+ #include "nsIFile.h"
+ #include "nsIObserver.h"
+ #include "nsIObserverService.h"
+@@ -89,10 +90,13 @@
+ #  define APP_REGISTRY_NAME "appreg"
+ #endif
+ 
+ #define PREF_OVERRIDE_DIRNAME "preferences"
+ 
++// define default product directory
++#define DEFAULT_PRODUCT_DIR nsLiteralCString(MOZ_USER_DIR)
++
+ nsXREDirProvider* gDirServiceProvider = nullptr;
+ nsIFile* gDataDirHomeLocal = nullptr;
+ nsIFile* gDataDirHome = nullptr;
+ MOZ_RUNINIT nsCOMPtr<nsIFile> gDataDirProfileLocal = nullptr;
+ MOZ_RUNINIT nsCOMPtr<nsIFile> gDataDirProfile = nullptr;
+@@ -365,13 +369,14 @@
+   } else if (!strcmp(aProperty, XRE_USER_NATIVE_MANIFESTS)) {
+     rv = GetUserDataDirectoryHome(getter_AddRefs(file), false);
+     NS_ENSURE_SUCCESS(rv, rv);
+ #  if defined(XP_MACOSX)
+     rv = file->AppendNative("Mozilla"_ns);
+-#  else   // defined(XP_MACOSX)
+-    rv = file->AppendNative(".mozilla"_ns);
+-#  endif  // defined(XP_MACOSX)
++#  else
++    rv = AppendLegacyOrXDGUserNativeManifest(file);
++#  endif
++    NS_ENSURE_SUCCESS(rv, rv);
+   }
+ #endif  // defined(XP_UNIX) || defined(XP_MACOSX)
+   else if (!strcmp(aProperty, XRE_UPDATE_ROOT_DIR)) {
+     rv = GetUpdateRootDir(getter_AddRefs(file));
+   } else if (!strcmp(aProperty, XRE_OLD_UPDATE_ROOT_DIR)) {
+@@ -1024,10 +1029,11 @@
+   }
+ 
+   return NS_OK;
+ }
+ 
++// Return the home directory that will contain user data
+ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
+                                                     bool aLocal) {
+   // Copied from nsAppFileLocationProvider (more or less)
+   nsCOMPtr<nsIFile> localDir;
+ 
+@@ -1080,32 +1086,25 @@
+   }
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+   MOZ_TRY(NS_NewLocalFile(path, getter_AddRefs(localDir)));
+ #elif defined(XP_UNIX)
+-  const char* homeDir = getenv("HOME");
++  const char* homeDir = PR_GetEnv("HOME");
+   if (!homeDir || !*homeDir) return NS_ERROR_FAILURE;
+ 
+ #  ifdef ANDROID /* We want (ProfD == ProfLD) on Android. */
+-  aLocal = false;
+-#  endif
+-
++  rv = NS_NewNativeLocalFile(nsDependentCString(homeDir), true,
++                             getter_AddRefs(localDir));
++#  else
+   if (aLocal) {
+-    // If $XDG_CACHE_HOME is defined use it, otherwise use $HOME/.cache.
+-    const char* cacheHome = getenv("XDG_CACHE_HOME");
+-    if (cacheHome && *cacheHome) {
+-      MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(cacheHome),
+-                                    getter_AddRefs(localDir)));
+-    } else {
+-      MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(homeDir),
+-                                    getter_AddRefs(localDir)));
+-      MOZ_TRY(localDir->AppendNative(".cache"_ns));
+-    }
++    MOZ_TRY(nsXREDirProvider::AppendLegacyOrXDGCachePath(
++        homeDir, getter_AddRefs(localDir)));
+   } else {
+-    MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(homeDir),
+-                                  getter_AddRefs(localDir)));
++    MOZ_TRY(nsXREDirProvider::AppendLegacyOrXDGHomePath(
++        homeDir, getter_AddRefs(localDir)));
+   }
++#  endif  // ANDROID
+ #else
+ #  error "Don't know how to get product dir on your platform"
+ #endif
+ 
+   localDir.forget(aFile);
+@@ -1190,22 +1189,20 @@
+ 
+   nsresult rv;
+ 
+ #if defined(XP_MACOSX) || defined(XP_WIN)
+ 
+-  static const char* const sXR = "Mozilla";
+-  rv = aFile->AppendNative(nsDependentCString(sXR));
++  rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+   static const char* const sExtensions = "Extensions";
+   rv = aFile->AppendNative(nsDependentCString(sExtensions));
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+ #elif defined(XP_UNIX)
+ 
+-  static const char* const sXR = ".mozilla";
+-  rv = aFile->AppendNative(nsDependentCString(sXR));
++  rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+   static const char* const sExtensions = "extensions";
+   rv = aFile->AppendNative(nsDependentCString(sExtensions));
+   NS_ENSURE_SUCCESS(rv, rv);
+@@ -1214,10 +1211,150 @@
+ #  error "Don't know how to get XRE user extension path on your platform"
+ #endif
+   return NS_OK;
+ }
+ 
++nsresult nsXREDirProvider::AppendLegacyOrXDGCachePath(const char* aHomeDir,
++                                                      nsIFile** aFile) {
++  nsresult rv;
++  nsCOMPtr<nsIFile> localDir;
++  nsDependentCString homeDir(aHomeDir);
++
++  // If $XDG_CACHE_HOME is defined use it, otherwise use $HOME/.cache.
++  const char* cacheHome = PR_GetEnv("XDG_CACHE_HOME");
++  if (cacheHome && *cacheHome) {
++    rv = NS_NewNativeLocalFile(nsDependentCString(cacheHome),
++                               getter_AddRefs(localDir));
++  } else {
++    rv = NS_NewNativeLocalFile(homeDir, getter_AddRefs(localDir));
++    if (NS_SUCCEEDED(rv)) {
++      rv = localDir->AppendNative(".cache"_ns);
++    }
++  }
++
++  if (NS_SUCCEEDED(rv)) {
++    localDir.forget(aFile);
++  }
++
++  return rv;
++}
++
++/*
++ * Return whether MOZ_LEGACY_HOME == 1
++ */
++bool nsXREDirProvider::IsForceLegacyHome() {
++  const char* legacyhomedir = PR_GetEnv("MOZ_LEGACY_HOME");
++  return legacyhomedir && legacyhomedir[0] == '1';
++}
++
++/*
++ * Check if legacy ~/.mozilla/ exists
++ */
++bool nsXREDirProvider::LegacyHomeExists(const char* aHomeDir, nsIFile** aFile) {
++  bool exists;
++  nsDependentCString homeDir(aHomeDir);
++  nsCOMPtr<nsIFile> localDir;
++  nsCOMPtr<nsIFile> parentDir;
++
++  // check old config ~/.mozilla
++  nsresult rv = NS_NewNativeLocalFile(homeDir, getter_AddRefs(localDir));
++  NS_ENSURE_SUCCESS(rv, false);
++
++  // We hardcode because we want to control and not depend on what the user has
++  // provided via MOZ_USER_DIR and we want to check for legacy behavior
++  rv = localDir->AppendRelativeNativePath(".mozilla"_ns);
++  NS_ENSURE_SUCCESS(rv, false);
++
++  rv = localDir->Exists(&exists);
++  NS_ENSURE_SUCCESS(rv, false);
++
++  rv = localDir->GetParent(getter_AddRefs(parentDir));
++  if (aFile) {
++    parentDir.forget(aFile);
++  }
++  NS_ENSURE_SUCCESS(rv, false);
++
++  return exists;
++}
++
++/*
++ * Check if XDG_CONFIG_HOME is here and use it or default to ${aHomeDir}/.config
++ */
++nsresult nsXREDirProvider::GetXDGConfigHome(const char* aHomeDir,
++                                            nsIFile** aFile) {
++  nsresult rv;
++  nsCOMPtr<nsIFile> localDir;
++
++  const char* xdghomedir = PR_GetEnv("XDG_CONFIG_HOME");
++  if (!xdghomedir || !*xdghomedir) {
++    rv = NS_NewNativeLocalFile(nsDependentCString(aHomeDir),
++                               getter_AddRefs(localDir));
++    NS_ENSURE_SUCCESS(rv, rv);
++    rv = localDir->AppendRelativeNativePath(".config"_ns);
++    NS_ENSURE_SUCCESS(rv, rv);
++  } else {
++    rv = NS_NewNativeLocalFile(nsDependentCString(xdghomedir),
++                               getter_AddRefs(localDir));
++    NS_ENSURE_SUCCESS(rv, rv);
++  }
++
++  localDir.forget(aFile);
++
++  return rv;
++}
++
++// Attempt to construct the HOME path depending on XDG or legacy status.
++nsresult nsXREDirProvider::AppendLegacyOrXDGHomePath(const char* aHomeDir,
++                                                     nsIFile** aFile) {
++  nsresult rv;
++  nsCOMPtr<nsIFile> parentDir;
++  nsDependentCString homeDir(aHomeDir);
++
++  bool exists = LegacyHomeExists(aHomeDir, getter_AddRefs(parentDir));
++  if (exists || IsForceLegacyHome()) {
++    parentDir.forget(aFile);
++    return NS_OK;
++  }
++
++  nsCOMPtr<nsIFile> localDir;
++
++  // legacy directory does not exists and we are not forcing it  use new config
++  rv = GetXDGConfigHome(aHomeDir, getter_AddRefs(localDir));
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  // We dont hardcode because we want to respect user's MOZ_USER_DIR here
++  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  rv = EnsureDirectoryExists(localDir);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  rv = localDir->GetParent(getter_AddRefs(parentDir));
++  parentDir.forget(aFile);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  return NS_OK;
++}
++
++#if defined(XP_UNIX)
++nsresult nsXREDirProvider::AppendLegacyOrXDGUserNativeManifest(nsIFile* aFile) {
++  nsresult rv;
++  nsCOMPtr<nsIFile> parentDir;
++
++  bool exists =
++      LegacyHomeExists(aFile->NativePath().get(), getter_AddRefs(parentDir));
++  if (exists || IsForceLegacyHome()) {
++    rv = aFile->AppendNative(".mozilla"_ns);
++  } else {
++    rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
++  }
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  return rv;
++}
++#endif
++
+ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
+   NS_ASSERTION(aFile, "Null pointer!");
+ 
+   // If there is no XREAppData then there is no information to use to build
+   // the profile path so just do nothing. This should only happen in xpcshell
+@@ -1270,11 +1407,13 @@
+   NS_ENSURE_SUCCESS(rv, rv);
+ #elif defined(XP_UNIX)
+   nsAutoCString folder;
+   // Make it hidden (by starting with "."), except when local (the
+   // profile is already under ~/.cache or XDG_CACHE_HOME).
+-  if (!aLocal) folder.Assign('.');
++  if (!aLocal && (IsForceLegacyHome() ||
++                  LegacyHomeExists(aFile->NativePath().get(), nullptr)))
++    folder.Assign('.');
+ 
+   if (!profile.IsEmpty()) {
+     // Skip any leading path characters
+     const char* profileStart = profile.get();
+     while (*profileStart == '/' || *profileStart == '\\') profileStart++;
+diff --git a/xpcom/io/moz.build b/xpcom/io/moz.build
+--- a/xpcom/io/moz.build
++++ b/xpcom/io/moz.build
+@@ -163,6 +163,7 @@
+     DEFINES["HAVE_USR_LIB64_DIR"] = True
+ 
+ LOCAL_INCLUDES += [
+     "!..",
+     "../build",
++    "/toolkit/xre",
+ ]
+diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocationProvider.cpp
+--- a/xpcom/io/nsAppFileLocationProvider.cpp
++++ b/xpcom/io/nsAppFileLocationProvider.cpp
+@@ -11,10 +11,11 @@
+ #include "nsAtom.h"
+ #include "nsIDirectoryService.h"
+ #include "nsIFile.h"
+ #include "nsString.h"
+ #include "nsSimpleEnumerator.h"
++#include "nsXREDirProvider.h"
+ #include "prenv.h"
+ #include "nsCRT.h"
+ #if defined(MOZ_WIDGET_COCOA)
+ #  include <Carbon/Carbon.h>
+ #  include "CocoaFileUtils.h"
+@@ -166,11 +167,12 @@
+ 
+ //----------------------------------------------------------------------------------------
+ // GetProductDirectory - Gets the directory which contains the application data
+ // folder
+ //
+-// UNIX   : ~/.mozilla/
++// UNIX   : ~/.mozilla/ or ${XDG_CONFIG_HOME:-~/.config}/mozilla
++//          if env var MOZ_LEGACY_HOME is set to 1, then ~/.mozilla/ is used
+ // WIN    : <Application Data folder on user's machine>\Mozilla
+ // Mac    : :Documents:Mozilla:
+ //----------------------------------------------------------------------------------------
+ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
+                                                         bool aLocal) {
+@@ -202,25 +204,32 @@
+                              getter_AddRefs(localDir));
+   if (NS_FAILED(rv)) {
+     return rv;
+   }
+ #elif defined(XP_UNIX)
+-  rv = NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")),
++  const char* homeDir = PR_GetEnv("HOME");
++  rv = NS_NewNativeLocalFile(nsDependentCString(homeDir),
+                              getter_AddRefs(localDir));
+   if (NS_FAILED(rv)) {
+     return rv;
+   }
++
++  rv = nsXREDirProvider::AppendLegacyOrXDGHomePath(homeDir,
++                                                   getter_AddRefs(localDir));
++  if (NS_FAILED(rv)) {
++    return rv;
++  }
+ #else
+ #  error dont_know_how_to_get_product_dir_on_your_platform
+ #endif
+ 
+   rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
+   if (NS_FAILED(rv)) {
+     return rv;
+   }
+-  rv = localDir->Exists(&exists);
+ 
++  rv = localDir->Exists(&exists);
+   if (NS_SUCCEEDED(rv) && !exists) {
+     rv = localDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+   }
+ 
+   if (NS_FAILED(rv)) {
+@@ -234,11 +243,12 @@
+ 
+ //----------------------------------------------------------------------------------------
+ // GetDefaultUserProfileRoot - Gets the directory which contains each user
+ // profile dir
+ //
+-// UNIX   : ~/.mozilla/
++// UNIX   : ~/.mozilla/ or ${XDG_CONFIG_HOME:-~/.config}/mozilla
++//          if env var MOZ_LEGACY_HOME is set to 1, then ~/.mozilla/ is used
+ // WIN    : <Application Data folder on user's machine>\Mozilla\Profiles
+ // Mac    : :Documents:Mozilla:Profiles:
+ //----------------------------------------------------------------------------------------
+ nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
+     nsIFile** aLocalFile, bool aLocal) {
+

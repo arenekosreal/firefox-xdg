@@ -87,7 +87,7 @@ source=(
   org.mozilla.$_pkgname.metainfo.xml
   0001-Install-under-remoting-name.patch
   # Check https://phabricator.services.mozilla.com/D6995
-  firefox-xdg-support.diff::https://phabricator.services.mozilla.com/D6995?download=true
+  firefox-xdg-support.diff
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
@@ -100,14 +100,14 @@ sha256sums=('3bee314eb7934451be4e2c7ecac38b382f8422fed8287e05be26fe94dd286f57'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            'bcd24a3ba1b966a98c54876484cad0c61755b6d63e3b9ea8b10fc11f328801e0')
+            '1df38b43d2cb0ae0aa26681de4a3824c67dbb07376cc2c2a107a3ac45ba81f7e')
 b2sums=('05f92682dc756998f1dd56cdbbf8a90a45cade9d8541e83edbbef07ce4cb66e6a3bfdef5e59bd824b2d6b13c49c6a587e9302779064deecd68ba6dbaf9300f9b'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        '222dc89c00e6bf7e1d4ca738caee69e925e7dc1db7bbaf6ec19206119a866eeb788e50d9081359b9f0e57f241975ac8fb7a78c861551a9d57ac6b887010d6355')
+        'e59160cb3e3941cdf15e05a32327a95fd3cc1ce1673331242249957637f6d015b1ae3af39f453e6444451012ef9cd8d7610ea331ac9231a0f9567741974ab67a')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please

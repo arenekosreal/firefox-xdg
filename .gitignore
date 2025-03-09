@@ -3,5 +3,4 @@ src
 *.pkg.tar.*
 *.log
 *.tar.*
-firefox-xdg-support.diff
 *.asc
