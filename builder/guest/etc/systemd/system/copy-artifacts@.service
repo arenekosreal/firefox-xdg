@@ -1,0 +1,10 @@
+[Unit]
+Description=Copying ./pkgdest to ./%I
+Wants=%i.mount
+After=%i.mount
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cp -r ./pkgdest/. ./%I
+User=root
+Group=root

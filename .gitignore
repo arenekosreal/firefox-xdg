@@ -4,3 +4,7 @@ src
 *.log
 *.tar.*
 *.asc
+# VM disk
+/builder/*.qcow2
+# VM kernel/initramfs
+/builder/boot

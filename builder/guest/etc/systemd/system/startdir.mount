@@ -1,0 +1,7 @@
+[Unit]
+Description=Mount /startdir with virtiofs
+
+[Mount]
+What=startdir
+Where=/startdir
+Type=virtiofs
