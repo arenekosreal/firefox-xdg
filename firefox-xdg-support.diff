@@ -198,7 +198,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
    static const char* const sExtensions = "extensions";
    rv = aFile->AppendNative(nsDependentCString(sExtensions));
    NS_ENSURE_SUCCESS(rv, rv);
-@@ -1214,10 +1211,150 @@
+@@ -1214,10 +1211,151 @@
  #  error "Don't know how to get XRE user extension path on your platform"
  #endif
    return NS_OK;
@@ -272,19 +272,20 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 + */
 +nsresult nsXREDirProvider::GetXDGConfigHome(const char* aHomeDir,
 +                                            nsIFile** aFile) {
-+  nsresult rv;
++  nsresult rv = NS_OK;
 +  nsCOMPtr<nsIFile> localDir;
 +
 +  const char* xdghomedir = PR_GetEnv("XDG_CONFIG_HOME");
-+  if (!xdghomedir || !*xdghomedir) {
++  if (xdghomedir && *xdghomedir) {
++    rv = NS_NewNativeLocalFile(nsDependentCString(xdghomedir),
++                               getter_AddRefs(localDir));
++  }
++
++  if (NS_FAILED(rv) || !xdghomedir || !*xdghomedir) {
 +    rv = NS_NewNativeLocalFile(nsDependentCString(aHomeDir),
 +                               getter_AddRefs(localDir));
 +    NS_ENSURE_SUCCESS(rv, rv);
 +    rv = localDir->AppendRelativeNativePath(".config"_ns);
-+    NS_ENSURE_SUCCESS(rv, rv);
-+  } else {
-+    rv = NS_NewNativeLocalFile(nsDependentCString(xdghomedir),
-+                               getter_AddRefs(localDir));
 +    NS_ENSURE_SUCCESS(rv, rv);
 +  }
 +
@@ -349,7 +350,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    // If there is no XREAppData then there is no information to use to build
    // the profile path so just do nothing. This should only happen in xpcshell
-@@ -1270,11 +1407,13 @@
+@@ -1270,11 +1408,13 @@
    NS_ENSURE_SUCCESS(rv, rv);
  #elif defined(XP_UNIX)
    nsAutoCString folder;

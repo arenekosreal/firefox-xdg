@@ -4,7 +4,7 @@
 
 _pkgname=firefox
 pkgname=$_pkgname-xdg
-pkgver=137.0
+pkgver=137.0.1
 pkgrel=1
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
@@ -91,23 +91,23 @@ source=(
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
-  # https://blog.mozilla.org/security/2023/05/11/updated-gpg-key-for-signing-firefox-releases/
+  # https://blog.mozilla.org/security/2025/04/01/updated-gpg-key-for-signing-firefox-releases-2/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('1ec47e2f83ccb80c0133f171091b5669c7ffdf7b86051fc85c0f915b7bcba91d'
+sha256sums=('081da8602e19c97b1de4c89a24ddade9d14d38a31eac75dcdb854f0cdd2e0be4'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            '1df38b43d2cb0ae0aa26681de4a3824c67dbb07376cc2c2a107a3ac45ba81f7e')
-b2sums=('09556f8f22292442dbe350ffef285745e0893428129ea1a5b9eaecf47d6847d585bf5cadc902ca0e39333aa391b8892f1a958948037faf1653a0a4480b726c5a'
+            '067bc3cd48b9a04be407f88e45b3db8e90be0bfb1a4f421eb683cfcd88864618')
+b2sums=('e2c5d31817133a80a89f78806ad8d54d9ebf71e05b1c2fcd2a4e7cd3052ac004f38361eb1476ec37dc68acb153fbef383be4076dac9049910e21860c9e8f9c8b'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        'e59160cb3e3941cdf15e05a32327a95fd3cc1ce1673331242249957637f6d015b1ae3af39f453e6444451012ef9cd8d7610ea331ac9231a0f9567741974ab67a')
+        '9e2c08b98701e275b59030aa621e9a2ac12be62a76bca684d24d221b9a19f6fef0d888fad29599307b99afb9eb7bec80c88227f723b28d18b455e793fc2535bf')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
