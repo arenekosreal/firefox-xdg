@@ -6,5 +6,5 @@ src
 *.asc
 # VM disk
 /builder/*.qcow2
-# VM kernel/initramfs
-/builder/boot
+# VM rootfs
+/builder/slash
