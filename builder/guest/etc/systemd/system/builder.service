@@ -1,8 +1,6 @@
 [Unit]
 Description=Build PKGBUILD with makepkg
 AssertFileNotEmpty=/startdir/PKGBUILD
-Wants=startdir.mount
-After=startdir.mount
 Wants=swap.target
 After=swap.target
 OnSuccess=copy-artifacts@startdir.service

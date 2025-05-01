@@ -1,9 +1,0 @@
-[Unit]
-Description=Swap for the device.
-Before=swap.target
-
-[Swap]
-What=UUID="7152de1a-738b-4b7c-ade1-d99ff86ae8d2"
-
-[Install]
-WantedBy=swap.target

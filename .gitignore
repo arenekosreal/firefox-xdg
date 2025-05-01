@@ -8,3 +8,5 @@ src
 /builder/*.qcow2
 # VM rootfs
 /builder/slash
+# VM nvram
+/builder/nvram.img

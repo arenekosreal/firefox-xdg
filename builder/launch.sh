@@ -6,19 +6,38 @@
 # NOTE: sudo is required only when you need to create a builder.
 
 # Package Requirements:
-#   arch-install-scripts bash coreutils e2fsprogs edk2-ovmf findmnt gptfdisk grep kmod pacman qemu-img
-#   qemu-system-x86 qemu-system-x86 sudo systemd util-linux virtiofsd
+#   arch-install-scripts
+#   bash
+#   btrfs-progs
+#   coreutils
+#   edk2-ovmf
+#   findutils
+#   gptfdisk
+#   grep
+#   kmod
+#   pacman
+#   qemu-img
+#   qemu-system-x86
+#   sed
+#   socat
+#   sudo
+#   systemd
+#   util-linux
+#   virtiofsd
+
 readonly READLINK=readlink \
          DIRNAME=dirname \
-         UNAME=uname
+         UNAME=uname \
+         UUIDGEN=uuidgen \
+         SUDO=sudo
 QEMU_SYSTEM="qemu-system-$($UNAME -m)"
 SCRIPT_DIR="$($READLINK -e "$($DIRNAME "$0")")"
+SWAP_UUID="$($UUIDGEN)"
+VIRTIOFSD_STARTDIR_PATH="$($READLINK -e "$DATA_DIR/..")"
 readonly SCRIPT_DIR \
          DATA_DIR="${DATA_DIR:-$SCRIPT_DIR}" \
-         QEMU_SYSTEM
-# ./guest/etc/systemd/system/dev-disk-by\x2duuid-7152de1a\x2d738b\x2d4b7c\x2dade1\x2dd99ff86ae8d2.swap
-# Requires static swap UUID
-readonly SWAP_UUID=7152de1a-738b-4b7c-ade1-d99ff86ae8d2 \
+         QEMU_SYSTEM \
+         SWAP_UUID \
          SWAP_SIZE=64G \
          MEMORY_SIZE=12G \
          CPU_CORES=4 \
@@ -28,7 +47,6 @@ readonly SWAP_UUID=7152de1a-738b-4b7c-ade1-d99ff86ae8d2 \
          FIRMWARE_CODE="/usr/share/edk2-ovmf/x64/OVMF_CODE.4m.fd" \
          FIRMWARE_VARS="/usr/share/edk2-ovmf/x64/OVMF_VARS.4m.fd" \
          USER_RUNTIME_DIR="$XDG_RUNTIME_DIR/qemu-builder" \
-         SUDO=sudo \
          ECHO=echo \
          MKDIR="mkdir -p" \
          SET=set \
@@ -48,12 +66,13 @@ readonly SWAP_UUID=7152de1a-738b-4b7c-ade1-d99ff86ae8d2 \
          SED=sed \
          SYSTEMCTL="systemctl --user" \
          SLEEP=sleep \
-         RM=rm
-readonly QEMU_NBD="$SUDO qemu-nbd" \
+         RM=rm \
+         SOCAT=socat \
+         TEE="tee -a" \
+         QEMU_NBD="$SUDO qemu-nbd" \
          MODPROBE="$SUDO modprobe" \
          SGDISK="$SUDO sgdisk" \
          MKSWAP="$SUDO mkswap"
-VIRTIOFSD_STARTDIR_PATH="$($READLINK -e "$DATA_DIR/..")"
 readonly VIRTIOFSD="unshare -r --map-auto -- /usr/lib/virtiofsd --announce-submounts --sandbox chroot" \
          VIRTIOFSD_STARTDIR_SERVICE="virtiofsd-builder-startdir.service" \
          VIRTIOFSD_STARTDIR_PATH \
@@ -87,7 +106,7 @@ function __create_subvolume_if_needed() {
 
 function __get_vm_status() {
     local status
-    if [[ -S "$MONITOR_SOCKET" ]] && status=$(echo "info status" | socat - "unix-connect:$MONITOR_SOCKET" | $GREP "VM status" | $CUT -d : -f 2 | xargs)
+    if [[ -S "$MONITOR_SOCKET" ]] && status=$(echo "info status" | $SOCAT - "unix-connect:$MONITOR_SOCKET" | $GREP "VM status" | $CUT -d : -f 2 | xargs)
     then
         echo "$status"
     fi
@@ -108,7 +127,14 @@ function __create_qemu() {
     $POPD
     $SED -i "3 i auth sufficient pam_listfile.so item=tty sense=allow file=/etc/securetty onerr=fail apply=root" \
         "$DATA_DIR/$ROOT_SUBVOL/etc/pam.d/login"
+    $ECHO "Adding those items into /etc/fstab:"
+    {
+        echo "UUID=$SWAP_UUID   none        swap        defaults"
+        echo "startdir          /startdir   virtiofs    defaults"
+    } | $TEE "$DATA_DIR/$ROOT_SUBVOL/etc/fstab"
 
+    $ECHO "Creating image to storage nvram..."
+    $QEMU_IMG create -f raw "$DATA_DIR/nvram.img" "4m"
     $ECHO "Creating qcow2 image to storage swap..."
     $QEMU_IMG create -f qcow2 -o nocow=on -o compression_type=zstd "$DATA_DIR/swap.qcow2" "$SWAP_SIZE"
     $ECHO "Ensuring NBD module is inserted..."
@@ -148,6 +174,7 @@ function __launch_qemu() {
                    -smp "$CPU_CORES"
                    -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_CODE"
                    -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_VARS"
+                   -drive "if=pflash,format=raw,file=$DATA_DIR/nvram.img"
                    -drive "if=virtio,format=qcow2,file=$DATA_DIR/swap.qcow2,aio=native,cache.direct=on"
                    -kernel "$DATA_DIR/$ROOT_SUBVOL/boot/vmlinuz-linux"
                    -initrd "$DATA_DIR/$ROOT_SUBVOL/boot/initramfs-linux-fallback.img"
@@ -180,31 +207,35 @@ function __launch_qemu() {
             $SLEEP 5
         done
         $ECHO "Recovering from state $1..."
-        echo "loadvm $1" | socat - "unix-connect:$MONITOR_SOCKET"
+        echo "loadvm $1" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
         if [[ "$(__get_vm_status)" == "paused" ]]
         then
-            echo "cont"  | socat - "unix-connect:$MONITOR_SOCKET"
+            echo "cont"  | $SOCAT - "unix-connect:$MONITOR_SOCKET"
         fi
     fi
     $ECHO "HINT: Root does not have any password, but you can login directly on any console in /etc/securetty."
 }
 
 function __save_qemu() {
-    echo "stop"      | socat - "unix-connect:$MONITOR_SOCKET"
-    echo "savevm $1" | socat - "unix-connect:$MONITOR_SOCKET"
+    echo "stop"      | $SOCAT - "unix-connect:$MONITOR_SOCKET"
+    echo "savevm $1" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
 }
 
 function __connect_qemu() {
-    socat "stdin,raw,echo=0,escape=0x11,b$SERIAL_SPEED" "unix-connect:$VM_CONSOLE_SOCKET"
+    $SOCAT "stdin,raw,echo=0,escape=0x11,b$SERIAL_SPEED" "unix-connect:$VM_CONSOLE_SOCKET"
 }
 
 function __quit_qemu() {
-    echo "quit" | socat - "unix-connect:$MONITOR_SOCKET"
+    echo "quit" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
     if $SYSTEMCTL is-active "$BUILDER_SLICE"
     then
         $ECHO "$BUILDER_SLICE is active, stopping it..."
         $SYSTEMCTL stop "$BUILDER_SLICE"
     fi
+}
+
+function __manage_qemu() {
+    $SOCAT "stdin,raw,echo=0,escape=0x11" "unix-connect:$MONITOR_SOCKET"
 }
 
 case "$1" in
@@ -217,7 +248,7 @@ case "$1" in
         __launch_qemu
         ;;
     --continue)
-        $ECHO "Continue existing builder..."
+        $ECHO "Continuing existing builder..."
         __launch_qemu "$SAVE_TAG"
         ;;
     --save)
@@ -233,9 +264,14 @@ case "$1" in
         $ECHO "Quitting builder..."
         __quit_qemu
         ;;
+    --manage)
+        $ECHO "Connectiong to Qemu monitor..."
+        $ECHO "You can use Ctrl+Q to exit shell."
+        __manage_qemu
+        ;;
     *)
         $ECHO "Invalid option."
-        $ECHO "Usage: $0 --create|--new|--continue|--save|--shell|--quit"
+        $ECHO "Usage: $0 --create|--new|--continue|--save|--shell|--quit|--manage"
         $ECHO "Recommend workflow:"
         $ECHO "$0 --create"
         $ECHO "$0 --new"
@@ -244,7 +280,6 @@ case "$1" in
         $ECHO "$0 --continue"
         $ECHO "$0 --save"
         $ECHO "$0 --quit"
-        $ECHO "$0 --continue"
         $ECHO "You can use environment variable DATA_DIR to control where to storage vm data, which may eat so much space."
         ;;
 esac
