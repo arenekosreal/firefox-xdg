@@ -1,20 +1,3 @@
-diff --git a/toolkit/moz.build b/toolkit/moz.build
---- a/toolkit/moz.build
-+++ b/toolkit/moz.build
-@@ -71,10 +71,13 @@
- 
- TEST_HARNESS_FILES.testing.mochitest.browser.toolkit.crashreporter.test.browser += [
-     "crashreporter/test/browser/crashreport.sjs",
- ]
- 
-+if CONFIG["ENABLE_TESTS"]:
-+    DIRS += ["tests/gtest"]
-+
- with Files("docs/**"):
-     BUG_COMPONENT = ("Toolkit", "General")
- 
- with Files("locales-preview/**"):
-     BUG_COMPONENT = ("Toolkit", "General")
 diff --git a/toolkit/xre/nsXREDirProvider.h b/toolkit/xre/nsXREDirProvider.h
 --- a/toolkit/xre/nsXREDirProvider.h
 +++ b/toolkit/xre/nsXREDirProvider.h
@@ -131,7 +114,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
    // Copied from nsAppFileLocationProvider (more or less)
    nsCOMPtr<nsIFile> localDir;
  
-@@ -1080,32 +1086,25 @@
+@@ -1080,32 +1086,27 @@
    }
    NS_ENSURE_SUCCESS(rv, rv);
  
@@ -142,11 +125,12 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
    if (!homeDir || !*homeDir) return NS_ERROR_FAILURE;
  
  #  ifdef ANDROID /* We want (ProfD == ProfLD) on Android. */
--  aLocal = false;
+   aLocal = false;
 -#  endif
 -
-+  rv = NS_NewNativeLocalFile(nsDependentCString(homeDir), true,
-+                             getter_AddRefs(localDir));
++  nsresult rv = NS_NewNativeLocalFile(nsDependentCString(homeDir),
++                                      getter_AddRefs(localDir));
++  NS_ENSURE_SUCCESS(rv, rv);
 +#  else
    if (aLocal) {
 -    // If $XDG_CACHE_HOME is defined use it, otherwise use $HOME/.cache.
@@ -173,7 +157,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  #endif
  
    localDir.forget(aFile);
-@@ -1190,22 +1189,20 @@
+@@ -1190,22 +1191,20 @@
  
    nsresult rv;
  
@@ -198,7 +182,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
    static const char* const sExtensions = "extensions";
    rv = aFile->AppendNative(nsDependentCString(sExtensions));
    NS_ENSURE_SUCCESS(rv, rv);
-@@ -1214,10 +1211,151 @@
+@@ -1214,10 +1213,156 @@
  #  error "Don't know how to get XRE user extension path on your platform"
  #endif
    return NS_OK;
@@ -332,13 +316,18 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +  nsresult rv;
 +  nsCOMPtr<nsIFile> parentDir;
 +
++#  if !defined(ANDROID) && !defined(XP_MACOSX)
 +  bool exists =
 +      LegacyHomeExists(aFile->NativePath().get(), getter_AddRefs(parentDir));
 +  if (exists || IsForceLegacyHome()) {
 +    rv = aFile->AppendNative(".mozilla"_ns);
 +  } else {
++#  endif
 +    rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
++#  if !defined(ANDROID) && !defined(XP_MACOSX)
 +  }
++#  endif
++
 +  NS_ENSURE_SUCCESS(rv, rv);
 +
 +  return rv;
@@ -350,7 +339,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    // If there is no XREAppData then there is no information to use to build
    // the profile path so just do nothing. This should only happen in xpcshell
-@@ -1270,11 +1408,13 @@
+@@ -1270,11 +1415,13 @@
    NS_ENSURE_SUCCESS(rv, rv);
  #elif defined(XP_UNIX)
    nsAutoCString folder;
