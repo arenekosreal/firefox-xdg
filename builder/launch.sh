@@ -167,14 +167,14 @@ function __create_qemu() {
 }
 
 function __launch_qemu() {
+    local NVRAM="$DATA_DIR/OVMF_VARS.4m.fd"
     local -a args=(-enable-kvm
                    -machine "q35,vmport=off"
                    -m "size=$MEMORY_SIZE"
                    -cpu "host"
                    -smp "$CPU_CORES"
                    -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_CODE"
-                   -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_VARS"
-                   -drive "if=pflash,format=raw,file=$DATA_DIR/nvram.img"
+                   -drive "if=pflash,format=raw,file=$NVRAM"
                    -drive "if=virtio,format=qcow2,file=$DATA_DIR/swap.qcow2,aio=native,cache.direct=on"
                    -kernel "$DATA_DIR/$ROOT_SUBVOL/boot/vmlinuz-linux"
                    -initrd "$DATA_DIR/$ROOT_SUBVOL/boot/initramfs-linux-fallback.img"
@@ -190,6 +190,10 @@ function __launch_qemu() {
                    -serial "chardev:char2"
                    -nographic)
     $MKDIR "$USER_RUNTIME_DIR"
+    if [[ ! -e "$NVRAM" ]]
+    then
+        $CP "$FIRMWARE_VARS" "$NVRAM"
+    fi
     # shellcheck disable=SC2086
     $SYSTEMD_RUN --unit "$VIRTIOFSD_STARTDIR_SERVICE" --slice "$BUILDER_SLICE" --description "virtiofsd for $VIRTIOFSD_STARTDIR_PATH" \
         $VIRTIOFSD --socket-path "$VIRTIOFSD_STARTDIR_SOCKET" --shared-dir "$VIRTIOFSD_STARTDIR_PATH"
