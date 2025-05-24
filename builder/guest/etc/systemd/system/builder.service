@@ -15,6 +15,7 @@ Environment=PKGDEST=/pkgdest
 Environment=SRCPKGDEST=/srcpkgdest
 Environment=SRCDEST=/srcdest
 Environment=LOGDEST=/logdest
+Environment=PACKAGER="arenekosreal <17194552+arenekosreal@users.noreply.github.com>"
 WorkingDirectory=/startdir
 
 ExecStart=/usr/bin/makepkg --cleanbuild --skippgpcheck --log
