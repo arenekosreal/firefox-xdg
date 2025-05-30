@@ -5,7 +5,7 @@
 _pkgname=firefox
 pkgname=$_pkgname-xdg
 pkgver=139.0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
@@ -100,14 +100,14 @@ sha256sums=('5b716ee9e6339a0de8e42f81c1d7dadca5c03e91ee9b2fa8e78357a631b499b0'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            'b55f5a52274c238ee96dd9907d9be6f033a9facae52cf0b24a3207f3381410f1')
+            '570545d99a5d69ff2df7d45b30132be59f05aaccd34598888d0d6379b36cd6c4')
 b2sums=('b3c9841a060461ae2a0317a39a8999c15f8b0130874a270c308a751097be33f436ec37d4881581eb33b28c6e038be0bd1556af82e2f91e409ff84fa51852978d'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        '5d40df2c7f7f1b41e0b4ac1960a924feb668d467f0a698f18f1f78043fb1268333b93fcde86826ea8dd9967857356e8f6c5db5eaa0b6f457629283d32880c9f2')
+        'bbbc0ebe1ebc9e87182cc146931e10536d46a8f01d497a513973f68a04c1756bf60b9d7580137ca069c1b9bfdfc99813ef8b727c659d4418dcae3252c18fa6c2')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please

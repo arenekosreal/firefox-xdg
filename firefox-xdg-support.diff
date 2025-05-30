@@ -1,26 +1,7 @@
 diff --git a/toolkit/xre/nsXREDirProvider.h b/toolkit/xre/nsXREDirProvider.h
 --- a/toolkit/xre/nsXREDirProvider.h
 +++ b/toolkit/xre/nsXREDirProvider.h
-@@ -17,16 +17,12 @@
- #ifdef MOZ_BACKGROUNDTASKS
- #  include "mozilla/BackgroundTasks.h"
- #endif
- 
- // {5573967d-f6cf-4c63-8e0e-9ac06e04d62b}
--#define NS_XREDIRPROVIDER_CID                        \
--  {                                                  \
--    0x5573967d, 0xf6cf, 0x4c63, {                    \
--      0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b \
--    }                                                \
--  }
-+#define NS_XREDIRPROVIDER_CID \
-+  {0x5573967d, 0xf6cf, 0x4c63, {0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b}}
- #define NS_XREDIRPROVIDER_CONTRACTID "@mozilla.org/xre/directory-provider;1"
- 
- class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
-                                public nsIXREDirProvider,
-                                public nsIProfileStartup {
-@@ -72,10 +68,22 @@
+@@ -68,10 +68,22 @@
      return GetUserDataDirectory(aFile, true);
    }
  
@@ -43,7 +24,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.h b/toolkit/xre/nsXREDirProvider.h
    nsIFile* GetGREBinDir() { return mGREBinDir; }
    nsIFile* GetAppDir() {
      if (mXULAppDir) return mXULAppDir;
-@@ -111,10 +119,11 @@
+@@ -107,10 +119,11 @@
  
   private:
    nsresult GetFilesInternal(const char* aProperty,
@@ -157,7 +138,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  #endif
  
    localDir.forget(aFile);
-@@ -1190,22 +1191,20 @@
+@@ -1190,22 +1191,27 @@
  
    nsresult rv;
  
@@ -173,16 +154,23 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
    NS_ENSURE_SUCCESS(rv, rv);
  
  #elif defined(XP_UNIX)
++  nsCOMPtr<nsIFile> parentDir;
  
 -  static const char* const sXR = ".mozilla";
 -  rv = aFile->AppendNative(nsDependentCString(sXR));
-+  rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
++  bool exists =
++      LegacyHomeExists(aFile->NativePath().get(), getter_AddRefs(parentDir));
++  if (exists || IsForceLegacyHome()) {
++    rv = aFile->AppendNative(".mozilla"_ns);
++  } else {
++    rv = aFile->AppendNative(DEFAULT_PRODUCT_DIR);
++  }
    NS_ENSURE_SUCCESS(rv, rv);
  
    static const char* const sExtensions = "extensions";
    rv = aFile->AppendNative(nsDependentCString(sExtensions));
    NS_ENSURE_SUCCESS(rv, rv);
-@@ -1214,10 +1213,156 @@
+@@ -1214,10 +1220,156 @@
  #  error "Don't know how to get XRE user extension path on your platform"
  #endif
    return NS_OK;
@@ -339,7 +327,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    // If there is no XREAppData then there is no information to use to build
    // the profile path so just do nothing. This should only happen in xpcshell
-@@ -1270,11 +1415,13 @@
+@@ -1270,11 +1422,13 @@
    NS_ENSURE_SUCCESS(rv, rv);
  #elif defined(XP_UNIX)
    nsAutoCString folder;
@@ -394,7 +382,7 @@ diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocation
  //----------------------------------------------------------------------------------------
  nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
                                                          bool aLocal) {
-@@ -202,25 +204,32 @@
+@@ -202,25 +204,47 @@
                               getter_AddRefs(localDir));
    if (NS_FAILED(rv)) {
      return rv;
@@ -408,16 +396,32 @@ diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocation
      return rv;
    }
 +
++#if defined(XP_UNIX) && !defined(XP_DARWIN) && !defined(ANDROID)
 +  rv = nsXREDirProvider::AppendLegacyOrXDGHomePath(homeDir,
 +                                                   getter_AddRefs(localDir));
 +  if (NS_FAILED(rv)) {
 +    return rv;
 +  }
++#endif
++
  #else
  #  error dont_know_how_to_get_product_dir_on_your_platform
  #endif
  
-   rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
+-  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
++#if defined(XP_UNIX) && !defined(XP_DARWIN) && !defined(ANDROID)
++  nsCOMPtr<nsIFile> parentDir;
++  bool legacyExists =
++      nsXREDirProvider::LegacyHomeExists(localDir->NativePath().get(), getter_AddRefs(parentDir));
++  if (legacyExists || nsXREDirProvider::IsForceLegacyHome()) {
++    rv = localDir->AppendNative(".mozilla"_ns);
++  } else {
++    rv = localDir->AppendNative(DEFAULT_PRODUCT_DIR);
++  }
++#else
++  rv = localDir->AppendNative(DEFAULT_PRODUCT_DIR);
++#endif
++
    if (NS_FAILED(rv)) {
      return rv;
    }
@@ -429,7 +433,7 @@ diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocation
    }
  
    if (NS_FAILED(rv)) {
-@@ -234,11 +243,12 @@
+@@ -234,11 +258,12 @@
  
  //----------------------------------------------------------------------------------------
  // GetDefaultUserProfileRoot - Gets the directory which contains each user
