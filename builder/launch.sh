@@ -33,7 +33,7 @@ readonly READLINK=readlink \
 QEMU_SYSTEM="qemu-system-$($UNAME -m)"
 SCRIPT_DIR="$($READLINK -e "$($DIRNAME "$0")")"
 SWAP_UUID="$($UUIDGEN)"
-VIRTIOFSD_STARTDIR_PATH="$($READLINK -e "$DATA_DIR/..")"
+VIRTIOFSD_STARTDIR_PATH="$($READLINK -e "$SCRIPT_DIR/..")"
 readonly SCRIPT_DIR \
          DATA_DIR="${DATA_DIR:-$SCRIPT_DIR}" \
          QEMU_SYSTEM \
@@ -42,7 +42,6 @@ readonly SCRIPT_DIR \
          MEMORY_SIZE=12G \
          CPU_CORES=4 \
          SERIAL_SPEED=115200 \
-         SAVE_TAG="latest-builder-status"
          ROOT_SUBVOL="slash" \
          FIRMWARE_CODE="/usr/share/edk2-ovmf/x64/OVMF_CODE.4m.fd" \
          FIRMWARE_VARS="/usr/share/edk2-ovmf/x64/OVMF_VARS.4m.fd" \
@@ -65,8 +64,7 @@ readonly SCRIPT_DIR \
          CP=cp \
          SED=sed \
          SYSTEMCTL="systemctl --user" \
-         SLEEP=sleep \
-         RM=rm \
+         RM="$SUDO rm" \
          SOCAT=socat \
          TEE="tee -a" \
          QEMU_NBD="$SUDO qemu-nbd" \
@@ -104,14 +102,6 @@ function __create_subvolume_if_needed() {
     esac
 }
 
-function __get_vm_status() {
-    local status
-    if [[ -S "$MONITOR_SOCKET" ]] && status=$(echo "info status" | $SOCAT - "unix-connect:$MONITOR_SOCKET" | $GREP "VM status" | $CUT -d : -f 2 | xargs)
-    then
-        echo "$status"
-    fi
-}
-
 function __create_qemu() {
     if [[ -d "$DATA_DIR/$ROOT_SUBVOL" ]]
     then
@@ -133,8 +123,6 @@ function __create_qemu() {
         echo "startdir          /startdir   virtiofs    defaults"
     } | $TEE "$DATA_DIR/$ROOT_SUBVOL/etc/fstab"
 
-    $ECHO "Creating image to storage nvram..."
-    $QEMU_IMG create -f raw "$DATA_DIR/nvram.img" "4m"
     $ECHO "Creating qcow2 image to storage swap..."
     $QEMU_IMG create -f qcow2 -o nocow=on -o compression_type=zstd "$DATA_DIR/swap.qcow2" "$SWAP_SIZE"
     $ECHO "Ensuring NBD module is inserted..."
@@ -167,15 +155,15 @@ function __create_qemu() {
 }
 
 function __launch_qemu() {
-    local NVRAM="$DATA_DIR/OVMF_VARS.4m.fd"
+    local NVRAM="$DATA_DIR/OVMF_VARS.4m.qcow2"
     local -a args=(-enable-kvm
                    -machine "q35,vmport=off"
                    -m "size=$MEMORY_SIZE"
                    -cpu "host"
                    -smp "$CPU_CORES"
-                   -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_CODE"
-                   -drive "if=pflash,format=raw,file=$NVRAM"
                    -drive "if=virtio,format=qcow2,file=$DATA_DIR/swap.qcow2,aio=native,cache.direct=on"
+                   -drive "if=pflash,format=raw,readonly=on,file=$FIRMWARE_CODE"
+                   -drive "if=pflash,format=qcow2,file=$NVRAM"
                    -kernel "$DATA_DIR/$ROOT_SUBVOL/boot/vmlinuz-linux"
                    -initrd "$DATA_DIR/$ROOT_SUBVOL/boot/initramfs-linux-fallback.img"
                    -append "root=$VIRTIOFSD_SLASH_TAG rootfstype=virtiofs rw console=ttyS0,$SERIAL_SPEED"
@@ -192,7 +180,7 @@ function __launch_qemu() {
     $MKDIR "$USER_RUNTIME_DIR"
     if [[ ! -e "$NVRAM" ]]
     then
-        $CP "$FIRMWARE_VARS" "$NVRAM"
+        $QEMU_IMG convert -O qcow2 -o nocow=on -o compression_type=zstd "$FIRMWARE_VARS" "$NVRAM"
     fi
     # shellcheck disable=SC2086
     $SYSTEMD_RUN --unit "$VIRTIOFSD_STARTDIR_SERVICE" --slice "$BUILDER_SLICE" --description "virtiofsd for $VIRTIOFSD_STARTDIR_PATH" \
@@ -203,26 +191,7 @@ function __launch_qemu() {
     # shellcheck disable=SC2086
     $SYSTEMD_RUN --unit "$BUILDER_SERVICE" --slice "$BUILDER_SLICE" --description "Qemu process for running builder" \
         $QEMU_SYSTEM "${args[@]}"
-    if [[ -n "$1" ]]
-    then
-        while [[ "$(__get_vm_status)" != "running" ]]
-        do
-            $ECHO "Waiting for monitor socket to be ready..."
-            $SLEEP 5
-        done
-        $ECHO "Recovering from state $1..."
-        echo "loadvm $1" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
-        if [[ "$(__get_vm_status)" == "paused" ]]
-        then
-            echo "cont"  | $SOCAT - "unix-connect:$MONITOR_SOCKET"
-        fi
-    fi
     $ECHO "HINT: Root does not have any password, but you can login directly on any console in /etc/securetty."
-}
-
-function __save_qemu() {
-    echo "stop"      | $SOCAT - "unix-connect:$MONITOR_SOCKET"
-    echo "savevm $1" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
 }
 
 function __connect_qemu() {
@@ -230,8 +199,7 @@ function __connect_qemu() {
 }
 
 function __quit_qemu() {
-    echo "quit" | $SOCAT - "unix-connect:$MONITOR_SOCKET"
-    if $SYSTEMCTL is-active "$BUILDER_SLICE"
+    if $SYSTEMCTL --quiet is-active "$BUILDER_SLICE"
     then
         $ECHO "$BUILDER_SLICE is active, stopping it..."
         $SYSTEMCTL stop "$BUILDER_SLICE"
@@ -247,17 +215,9 @@ case "$1" in
         $ECHO "Creating new builder..."
         __create_qemu
         ;;
-    --new)
-        $ECHO "Launching new builder..."
+    --launch)
+        $ECHO "Launching builder..."
         __launch_qemu
-        ;;
-    --continue)
-        $ECHO "Continuing existing builder..."
-        __launch_qemu "$SAVE_TAG"
-        ;;
-    --save)
-        $ECHO "Saving builder..."
-        __save_qemu "$SAVE_TAG"
         ;;
     --shell)
         $ECHO "Connecting to builder..."
@@ -274,15 +234,28 @@ case "$1" in
         __manage_qemu
         ;;
     *)
-        $ECHO "Invalid option."
-        $ECHO "Usage: $0 --create|--new|--continue|--save|--shell|--quit|--manage"
+        $ECHO "Unsupported option $1."
+        $ECHO "Usage: $0 --create|--launch|--shell|--quit|--manage"
         $ECHO "Recommend workflow:"
         $ECHO "$0 --create"
-        $ECHO "$0 --new"
-        $ECHO "$0 --save"
+        $ECHO "$0 --launch"
+        $ECHO "$0 --shell"
+        $ECHO "     # systemctl start builder"
+        $ECHO "# Press Ctrl+Q to leave shell."
+        $ECHO "# Wait until it needs to be paused."
+        $ECHO "$0 --manage"
+        $ECHO "     (QEMU) stop"
+        $ECHO "     (QEMU) savevm tag"
+        $ECHO "     (QEMU) quit"
         $ECHO "$0 --quit"
-        $ECHO "$0 --continue"
-        $ECHO "$0 --save"
+        $ECHO "$0 --launch"
+        $ECHO "$0 --manage"
+        $ECHO "     (QEMU) loadvm tag"
+        $ECHO "     (QEMU) cont"
+        $ECHO "# Press Ctrl+Q to leave monitor shell."
+        $ECHO "# Save and load again until it finishes work."
+        $ECHO "$0 --shell"
+        $ECHO "     # systemctl poweroff"
         $ECHO "$0 --quit"
         $ECHO "You can use environment variable DATA_DIR to control where to storage vm data, which may eat so much space."
         ;;
