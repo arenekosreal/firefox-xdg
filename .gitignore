@@ -4,9 +4,6 @@ src
 *.log
 *.tar.*
 *.asc
-# VM disk
+# VM
 /builder/*.qcow2
-# VM rootfs
-/builder/slash
-# VM nvram
-/builder/nvram.img
+/builder/boot
