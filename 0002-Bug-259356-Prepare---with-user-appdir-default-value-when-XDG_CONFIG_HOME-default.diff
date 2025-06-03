@@ -1,0 +1,19 @@
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -3830,11 +3830,13 @@
+ 
+     @depends(target)
+     def default_user_appdir(target):
+         if target.kernel in ("WINNT", "Darwin"):
+             return "Mozilla"
+-        return ".mozilla"
++        elif target.os == "Android":
++            return ".mozilla"
++        return "mozilla"
+ 
+     option(
+         "--with-user-appdir",
+         nargs=1,
+         default=default_user_appdir,
+

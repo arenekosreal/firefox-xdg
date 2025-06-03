@@ -86,9 +86,12 @@ source=(
   $_pkgname.desktop
   org.mozilla.$_pkgname.metainfo.xml
   0001-Install-under-remoting-name.patch
+  # Check https://phabricator.services.mozilla.com/D214374
+  0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
   # Check https://phabricator.services.mozilla.com/D6995
-  firefox-xdg-support.diff
-  let-crash_helper_server-use-xdg-config-home.diff
+  0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
+  # Check https://phabricator.services.mozilla.com/D252148
+  0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
@@ -101,16 +104,18 @@ sha256sums=('5b716ee9e6339a0de8e42f81c1d7dadca5c03e91ee9b2fa8e78357a631b499b0'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
+            '86794514fb32a349f299c8007a374eac286d52193663f25eb1bc8fcd0f0c20e3'
             '570545d99a5d69ff2df7d45b30132be59f05aaccd34598888d0d6379b36cd6c4'
-            'e88d04643cd84a3ff1790ef68814f0ce718c4c36aa0949b55b263a80d0c97e30')
+            '76a270101e80b86fbf77cc93fdd3eea64edeb9050b352f7664f0fd4ac2e1d0f9')
 b2sums=('b3c9841a060461ae2a0317a39a8999c15f8b0130874a270c308a751097be33f436ec37d4881581eb33b28c6e038be0bd1556af82e2f91e409ff84fa51852978d'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
+        '37483e12c4c7f460dac6ed02fbea98a1b84a736639de8ab4e4ed8d73afd116a4c8f62c20e2804b908f26b73f00d6bdf092c4146bee2df480a5bbbac22d625af6'
         'bbbc0ebe1ebc9e87182cc146931e10536d46a8f01d497a513973f68a04c1756bf60b9d7580137ca069c1b9bfdfc99813ef8b727c659d4418dcae3252c18fa6c2'
-        '6a741e67cba39b5f58f7cc3ed0098ee89246d54f5692e924dde283f19a9cc33fffcb09502f479d50b2b8c96dcc9c684ae6f7bd1b12cafac3a5b7555e3c70fffc')
+        '26284fb3dd3000f1f85d08b301da9e932a58d63ffa8a5738adac72f7a23ea56dd4ef48a53be577194c82fad8483cb928af2553515c95c9949671db96fe394ec8')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -125,8 +130,14 @@ prepare() {
   # Make different channels installable in parallel
   patch -Np1 -i ../0001-Install-under-remoting-name.patch
 
-  patch -Np1 -i ../firefox-xdg-support.diff
-  patch -Np1 -i ../let-crash_helper_server-use-xdg-config-home.diff
+  # Move data dir to ~/.config/mozilla
+  # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use it instead.
+  patch -Np1 -F5 -i ../0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
+  patch -Np1 -F5 -i ../0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
+  patch -Np1 -F5 -i ../0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
+  sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
+    toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+  # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
   sed -i 's|vendored:third_party/python/typing_extensions||g' ./python/sites/mach.txt
@@ -171,10 +182,6 @@ ac_add_options --enable-jack
 ac_add_options --enable-crashreporter
 ac_add_options --disable-updater
 ac_add_options --disable-tests
-
-# Use ~/.config/mozilla as user directory
-# Or we have to use ~/.config/.mozilla as user directory
-ac_add_options --with-user-appdir=mozilla
 END
 }
 
