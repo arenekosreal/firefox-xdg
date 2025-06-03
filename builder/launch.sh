@@ -214,7 +214,7 @@ function __launch_qemu() {
                         -drive "if=pflash,format=qcow2,file=$FIRMWARE_VARS_RW"
                         -kernel "$DATA_DIR$VM_KERNEL"
                         -initrd "$DATA_DIR$VM_INITRAMFS"
-                        -append "root=/dev/vda2 rootfstype=ext4 rw console=ttyS0,$SERIAL_SPEED"
+                        -append "root=/dev/vda2 rootfstype=ext4 rootflag=rw,noatime console=ttyS0,$SERIAL_SPEED"
                         -device "vhost-user-fs-pci,chardev=char0,tag=$VIRTIOFSD_STARTDIR_TAG"
                         -object "memory-backend-memfd,id=mem0,size=$MEMORY_SIZE,share=on"
                         -numa "node,memdev=mem0"
