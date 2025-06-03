@@ -132,9 +132,9 @@ prepare() {
 
   # Move data dir to ~/.config/mozilla
   # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use it instead.
-  patch -Np1 -F5 -i ../0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
-  patch -Np1 -F5 -i ../0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
-  patch -Np1 -F5 -i ../0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
+  patch -Np1 -i ../0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
+  patch -Np1 -i ../0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
+  patch -Np1 -F4 -i ../0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs
   # Allow building with system python-psutil python-zstandard python-typing_extensions
