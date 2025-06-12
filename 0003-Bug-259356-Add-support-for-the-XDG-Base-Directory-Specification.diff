@@ -342,6 +342,16 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
      // Skip any leading path characters
      const char* profileStart = profile.get();
      while (*profileStart == '/' || *profileStart == '\\') profileStart++;
+diff --git a/tools/lint/dot-mozilla-reference.yml b/tools/lint/dot-mozilla-reference.yml
+--- a/tools/lint/dot-mozilla-reference.yml
++++ b/tools/lint/dot-mozilla-reference.yml
+@@ -38,5 +38,6 @@
+         - testing/talos/talos/heavy.py
+         - toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+         - toolkit/moz.configure
+         - toolkit/xre/nsXREDirProvider.cpp
+         - toolkit/tests/gtest/TestXREAppDir.cpp
++        - xpcom/io/nsAppFileLocationProvider.cpp
 diff --git a/xpcom/io/moz.build b/xpcom/io/moz.build
 --- a/xpcom/io/moz.build
 +++ b/xpcom/io/moz.build
@@ -396,13 +406,13 @@ diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocation
      return rv;
    }
 +
-+#if defined(XP_UNIX) && !defined(XP_DARWIN) && !defined(ANDROID)
++#  if defined(XP_UNIX) && !defined(XP_DARWIN) && !defined(ANDROID)
 +  rv = nsXREDirProvider::AppendLegacyOrXDGHomePath(homeDir,
 +                                                   getter_AddRefs(localDir));
 +  if (NS_FAILED(rv)) {
 +    return rv;
 +  }
-+#endif
++#  endif
 +
  #else
  #  error dont_know_how_to_get_product_dir_on_your_platform
@@ -411,8 +421,8 @@ diff --git a/xpcom/io/nsAppFileLocationProvider.cpp b/xpcom/io/nsAppFileLocation
 -  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
 +#if defined(XP_UNIX) && !defined(XP_DARWIN) && !defined(ANDROID)
 +  nsCOMPtr<nsIFile> parentDir;
-+  bool legacyExists =
-+      nsXREDirProvider::LegacyHomeExists(localDir->NativePath().get(), getter_AddRefs(parentDir));
++  bool legacyExists = nsXREDirProvider::LegacyHomeExists(
++      localDir->NativePath().get(), getter_AddRefs(parentDir));
 +  if (legacyExists || nsXREDirProvider::IsForceLegacyHome()) {
 +    rv = localDir->AppendNative(".mozilla"_ns);
 +  } else {
