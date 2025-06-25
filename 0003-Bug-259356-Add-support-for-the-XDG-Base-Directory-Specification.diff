@@ -1,3 +1,46 @@
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -18806,10 +18806,18 @@
+ #  - 2: auto (true for flatpak or GTK_USE_PORTAL=1, false otherwise)
+ - name: widget.use-xdg-desktop-portal.open-uri
+   type: int32_t
+   value: 2
+   mirror: always
++
++# A preference that will be locked to reflect whether this build has support
++# for XDG Config Home handling. Mostly used to be able to keep tests around
++# in case of a backout of the feature
++- name: widget.support-xdg-config
++  type: bool
++  value: true
++  mirror: once
+ #endif
+ 
+ #ifdef XP_WIN
+ # WindowsUIUtils::Share to wait for user action on Windows share dialog
+ # `true` means the promise resolves when user completes or cancels the share
+diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
+--- a/toolkit/xre/nsAppRunner.cpp
++++ b/toolkit/xre/nsAppRunner.cpp
+@@ -5901,10 +5901,17 @@
+     rv = BackgroundTasks::RunBackgroundTask(cmdLine);
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ #endif
+ 
++#if defined(MOZ_WIDGET_GTK)
++  rv = Preferences::Lock("widget.support-xdg-config");
++  if (NS_FAILED(rv)) {
++    NS_ERROR("failed to lock XDG Config Home pref");
++  }
++#endif
++
+   {
+     rv = appStartup->Run();
+     if (NS_FAILED(rv)) {
+       NS_ERROR("failed to run appstartup");
+       gLogConsoleErrors = true;
 diff --git a/toolkit/xre/nsXREDirProvider.h b/toolkit/xre/nsXREDirProvider.h
 --- a/toolkit/xre/nsXREDirProvider.h
 +++ b/toolkit/xre/nsXREDirProvider.h
@@ -342,6 +385,34 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
      // Skip any leading path characters
      const char* profileStart = profile.get();
      while (*profileStart == '/' || *profileStart == '\\') profileStart++;
+diff --git a/toolkit/xre/test/browser.toml b/toolkit/xre/test/browser.toml
+--- a/toolkit/xre/test/browser.toml
++++ b/toolkit/xre/test/browser.toml
+@@ -2,5 +2,8 @@
+ tags = "os_integration"
+ 
+ ["browser_checkdllblockliststate.js"]
+ run-if = ["os == 'win'"]
+ skip-if = ["ccov"] # Bug 1531789
++
++["browser_xdg_pref.js"]
++run-if = ["os == 'linux'"]
+diff --git a/toolkit/xre/test/browser_xdg_pref.js b/toolkit/xre/test/browser_xdg_pref.js
+new file mode 100644
+--- /dev/null
++++ b/toolkit/xre/test/browser_xdg_pref.js
+@@ -0,0 +1,11 @@
++// Any copyright is dedicated to the Public Domain.
++// http://creativecommons.org/publicdomain/zero/1.0/
++
++add_task(async function test_pref_is_true() {
++  Assert.equal(true, Services.prefs.getBoolPref("widget.support-xdg-config"));
++});
++
++add_task(async function test_pref_is_locked() {
++  Services.prefs.setBoolPref("widget.support-xdg-config", false);
++  Assert.equal(true, Services.prefs.getBoolPref("widget.support-xdg-config"));
++});
 diff --git a/tools/lint/dot-mozilla-reference.yml b/tools/lint/dot-mozilla-reference.yml
 --- a/tools/lint/dot-mozilla-reference.yml
 +++ b/tools/lint/dot-mozilla-reference.yml
