@@ -103,7 +103,7 @@ sha256sums=('de848d56f5bd9f9bb9bbea17f425d1d887c1f4bb07d7e0be58c0e4a397ea86f0'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            '6fa22dc06986ac209aeecae76b2b2862710ad40da9be629377cc883d12877d42'
+            'cf7e0759d1a5a6f001a09a30bbd1e7ce73e748e944bb681342104703af2966ee'
             '7f0ca79da747a60449880390231573f405210945e52698d6b689e1c881a90272')
 b2sums=('5be32e347d2084aca99afa44bb50587b1085c3efb82021a06471dabcf07f18f7bd967aa740b69f2b0ab93bafbaafc13e7eac23c028f899a78217da5c78b07eda'
         'SKIP'
@@ -111,7 +111,7 @@ b2sums=('5be32e347d2084aca99afa44bb50587b1085c3efb82021a06471dabcf07f18f7bd967aa
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        '8f7752b80fdddb31b0a479d4b69bf6e3e6d0876dc0aa2f47ed2859a28f40ca0f018209fcf8f6bfae1df255cbb361d9140668d0de49c505590edb85608d6f7b91'
+        '3753e36123e37a20aff412a98164766c218edec50425160d58d713847176b5beae21fd1dd650e57d7c9c45a113d220f36b9cbaeaa55adaec6aaa56e0456a96f2'
         'f017ad6cbb1017d3aebdc7ebeffb26aa3f1bf2a4e2bfde706e0e7b3029dde6a04aa2c10478a5e2cc06fe4ba59998235d487873181e70ca4be3c02f346039589e')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
@@ -128,8 +128,8 @@ prepare() {
   patch -Np1 -i ../0001-Install-under-remoting-name.patch
 
   # Move data dir to ~/.config/mozilla
-  # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use it instead.
-  patch -Np1 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff || true
+  # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use old place instead.
+  patch -Np1 -F5 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
   patch -Np1 -F4 -i ../0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs

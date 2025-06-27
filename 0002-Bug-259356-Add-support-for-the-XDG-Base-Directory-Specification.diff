@@ -388,16 +388,6 @@ new file mode 100644
 +  Services.prefs.setBoolPref("widget.support-xdg-config", false);
 +  Assert.equal(true, Services.prefs.getBoolPref("widget.support-xdg-config"));
 +});
-diff --git a/tools/lint/dot-mozilla-reference.yml b/tools/lint/dot-mozilla-reference.yml
---- a/tools/lint/dot-mozilla-reference.yml
-+++ b/tools/lint/dot-mozilla-reference.yml
-@@ -38,5 +38,6 @@
-         - testing/talos/talos/heavy.py
-         - toolkit/crashreporter/crash_helper_server/src/logging/env.rs
-         - toolkit/moz.configure
-         - toolkit/xre/nsXREDirProvider.cpp
-         - toolkit/tests/gtest/TestXREAppDir.cpp
-+        - xpcom/io/nsAppFileLocationProvider.cpp
 diff --git a/xpcom/io/moz.build b/xpcom/io/moz.build
 --- a/xpcom/io/moz.build
 +++ b/xpcom/io/moz.build
