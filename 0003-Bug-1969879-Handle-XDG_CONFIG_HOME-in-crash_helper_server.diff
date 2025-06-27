@@ -51,18 +51,19 @@ diff --git a/toolkit/crashreporter/client/app/src/config.rs b/toolkit/crashrepor
  }
  
  mod buildid_section {
-@@ -493,14 +508,18 @@
-         }
-     }
+@@ -495,16 +510,23 @@
  
      #[cfg(all(target_os = "linux", any(not(mock), test)))]
      fn get_data_dir_root(&self, vendor: &str) -> anyhow::Result<PathBuf> {
-+        let legacy_data =
-+            std::env::home_dir().map(|h| h.join(format!(".{}", vendor.to_lowercase())));
          // home_dir is deprecated due to incorrect behavior on windows, but we only use it on linux
          #[allow(deprecated)]
 -        let data_path = if std::env::var_os("MOZ_LEGACY_HOME").is_some() {
 -            std::env::home_dir().map(|h| h.join(format!(".{}", vendor.to_lowercase())))
++        let home_dir = std::env::home_dir();
++
++        let legacy_data = home_dir
++            .clone()
++            .map(|h| h.join(format!(".{}", vendor.to_lowercase())));
 +        let data_path = if std::env::var_os("MOZ_LEGACY_HOME").is_some()
 +            || legacy_data.as_ref().expect("No HOME env?").exists()
 +        {
@@ -70,31 +71,25 @@ diff --git a/toolkit/crashreporter/client/app/src/config.rs b/toolkit/crashrepor
          } else {
              std::env::var_os("XDG_CONFIG_HOME")
                  .map(PathBuf::from)
-                 .or_else(|| std::env::home_dir().map(|home| home.join(".config")))
+-                .or_else(|| std::env::home_dir().map(|home| home.join(".config")))
++                .or_else(|| home_dir.map(|home| home.join(".config")))
                  .map(|h| h.join(format!("{}", vendor.to_lowercase())))
+         }
+         .with_context(|| self.string("crashreporter-error-no-home-dir"))?;
+         Ok(data_path)
+     }
 diff --git a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
 --- a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
 +++ b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
-@@ -3,11 +3,11 @@
-  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
- 
- use cfg_if::cfg_if;
- use mozbuild::config;
- use std::{
--    fs::{self, File},
-+    fs::{self, exists, File},
-     io,
-     path::PathBuf,
- };
- 
- /// Initialize logging
-@@ -31,11 +31,17 @@
+@@ -31,11 +31,19 @@
  fn guess_user_app_data_dir() -> Option<PathBuf> {
      let home_dir = dirs::home_dir()?;
  
      cfg_if! {
          if #[cfg(target_os = "linux")] {
 -            Some(home_dir.join(".mozilla").join(config::MOZ_APP_NAME))
++            use std::fs::exists;
++
 +            let legacy_data = home_dir.join(".mozilla").join(config::MOZ_APP_NAME);
 +            let data_path = if std::env::var_os("MOZ_LEGACY_HOME").is_some() || exists(&legacy_data).ok()? {
 +                legacy_data

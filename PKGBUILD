@@ -4,7 +4,7 @@
 
 _pkgname=firefox
 pkgname=$_pkgname-xdg
-pkgver=140.0
+pkgver=140.0.1
 pkgrel=1
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
@@ -87,36 +87,32 @@ source=(
   $_pkgname.desktop
   org.mozilla.$_pkgname.metainfo.xml
   0001-Install-under-remoting-name.patch
-  # Check https://phabricator.services.mozilla.com/D214374
-  0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
   # Check https://phabricator.services.mozilla.com/D6995
-  0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
+  0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
   # Check https://phabricator.services.mozilla.com/D252148
-  0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
+  0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
   # https://blog.mozilla.org/security/2025/04/01/updated-gpg-key-for-signing-firefox-releases-2/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('ee1253b49b21241abc5d490df60be1d9f1d3914cdc1a4e3482a8158913f9fd1f'
+sha256sums=('de848d56f5bd9f9bb9bbea17f425d1d887c1f4bb07d7e0be58c0e4a397ea86f0'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            'dabf431a346ce8701e1c8e37a95fcbf7f5451f5bd462ae85c059a6f8f5ca3d57'
-            'f4f28ec18bbee7e53ca7eb733e567fdb943e6b221d1da5f85161f2d0ad43d54d'
-            '76a270101e80b86fbf77cc93fdd3eea64edeb9050b352f7664f0fd4ac2e1d0f9')
-b2sums=('588d290e3ff70e47a0235ff8abe22c17a76c28389ff9bcbbfaf05efa9fc37ec29a5f64c2fb736f270f8b0c0467c0ce7ba1b5c7f186c86ba1528a4d362ff1c2d4'
+            '6fa22dc06986ac209aeecae76b2b2862710ad40da9be629377cc883d12877d42'
+            '7f0ca79da747a60449880390231573f405210945e52698d6b689e1c881a90272')
+b2sums=('5be32e347d2084aca99afa44bb50587b1085c3efb82021a06471dabcf07f18f7bd967aa740b69f2b0ab93bafbaafc13e7eac23c028f899a78217da5c78b07eda'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        '6ef16ee444d25e0b0cb82c3570f42bf9e7f43c674280cb1998d862fb3135f408074aa96ee9a9816b3cade04c029963c7d9e37d4bee7e18539e2d7d7aad16b743'
-        '8a6dc1afeaa15fe1435929827d7f136eec796ae57208f4b647a8d8e1f943e103a50e23e8dc136aa4f6e74f80a9a465ece4590f62fd40ad3b740e1ea0704424f9'
-        '26284fb3dd3000f1f85d08b301da9e932a58d63ffa8a5738adac72f7a23ea56dd4ef48a53be577194c82fad8483cb928af2553515c95c9949671db96fe394ec8')
+        '8f7752b80fdddb31b0a479d4b69bf6e3e6d0876dc0aa2f47ed2859a28f40ca0f018209fcf8f6bfae1df255cbb361d9140668d0de49c505590edb85608d6f7b91'
+        'f017ad6cbb1017d3aebdc7ebeffb26aa3f1bf2a4e2bfde706e0e7b3029dde6a04aa2c10478a5e2cc06fe4ba59998235d487873181e70ca4be3c02f346039589e')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -133,9 +129,8 @@ prepare() {
 
   # Move data dir to ~/.config/mozilla
   # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use it instead.
-  patch -Np1 -i ../0002-Bug-259356-Prepare---with-user-appdir-default-value-when-XDG_CONFIG_HOME-default.diff
-  patch -Np1 -i ../0003-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff || true
-  patch -Np1 -F4 -i ../0004-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
+  patch -Np1 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff || true
+  patch -Np1 -F4 -i ../0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs
   # Allow building with system python-psutil python-zstandard python-typing_extensions
