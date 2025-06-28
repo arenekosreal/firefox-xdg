@@ -345,16 +345,21 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    // If there is no XREAppData then there is no information to use to build
    // the profile path so just do nothing. This should only happen in xpcshell
-@@ -1296,11 +1433,13 @@
+@@ -1296,11 +1433,18 @@
    NS_ENSURE_SUCCESS(rv, rv);
  #elif defined(XP_UNIX)
    nsAutoCString folder;
    // Make it hidden (by starting with "."), except when local (the
    // profile is already under ~/.cache or XDG_CACHE_HOME).
 -  if (!aLocal) folder.Assign('.');
-+  if (!aLocal && (IsForceLegacyHome() ||
-+                  LegacyHomeExists(aFile->NativePath().get(), nullptr)))
++  if (!aLocal
++#  if defined(MOZ_WIDGET_GTK)
++      && (IsForceLegacyHome() ||
++          LegacyHomeExists(aFile->NativePath().get(), nullptr))
++#  endif
++  ) {
 +    folder.Assign('.');
++  }
  
    if (!profile.IsEmpty()) {
      // Skip any leading path characters
