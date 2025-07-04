@@ -82,7 +82,8 @@ options=(
   !makeflags
 )
 source=(
-  https://archive.mozilla.org/pub/firefox/releases/$pkgver/source/firefox-$pkgver.source.tar.xz{,.asc}
+  https://archive.mozilla.org/pub/firefox/releases/$pkgver/source/firefox-$pkgver.source.tar.xz
+  https://archive.mozilla.org/pub/firefox/releases/$pkgver/source/firefox-$pkgver.source.tar.xz.asc
   $_pkgname-symbolic.svg
   $_pkgname.desktop
   org.mozilla.$_pkgname.metainfo.xml
