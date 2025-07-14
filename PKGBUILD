@@ -134,6 +134,7 @@ prepare() {
   patch -Np1 -F4 -i ../0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+  sed -i 's|, &wasFromEnv||' toolkit/xre/nsXREDirProvider.cpp
   # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
