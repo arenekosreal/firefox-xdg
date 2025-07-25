@@ -1,7 +1,7 @@
 diff --git a/browser/app/profile/firefox.js b/browser/app/profile/firefox.js
 --- a/browser/app/profile/firefox.js
 +++ b/browser/app/profile/firefox.js
-@@ -3400,5 +3400,12 @@
+@@ -3442,5 +3442,12 @@
  pref("browser.contextual-services.contextId.rotation-in-days", 0);
  pref("browser.contextual-services.contextId.rust-component.enabled", true);
  
@@ -116,20 +116,47 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  #include "nsIFile.h"
  #include "nsIObserver.h"
  #include "nsIObserverService.h"
-@@ -361,11 +362,11 @@
+@@ -42,10 +43,11 @@
+ #include "mozilla/AutoRestore.h"
+ #ifdef MOZ_BACKGROUNDTASKS
+ #  include "mozilla/BackgroundTasks.h"
+ #endif
+ #include "mozilla/Components.h"
++#include "mozilla/DebugOnly.h"
+ #include "mozilla/Services.h"
+ #include "mozilla/Omnijar.h"
+ #include "mozilla/Preferences.h"
+ #include "mozilla/ProfilerLabels.h"
+ #include "mozilla/glean/ToolkitXreMetrics.h"
+@@ -361,11 +363,12 @@
    }
  #if defined(XP_UNIX) || defined(XP_MACOSX)
    else if (!strcmp(aProperty, XRE_SYS_NATIVE_MANIFESTS)) {
      rv = ::GetSystemParentDirectory(getter_AddRefs(file));
    } else if (!strcmp(aProperty, XRE_USER_NATIVE_MANIFESTS)) {
 -    rv = GetUserDataDirectoryHome(getter_AddRefs(file), false);
-+    rv = GetUserDataDirectoryHome(getter_AddRefs(file), false, true);
++    rv = GetUserDataDirectoryHome(getter_AddRefs(file), /* aLocal */ false,
++                                  /* aForceLegacy */ true);
      NS_ENSURE_SUCCESS(rv, rv);
  #  if defined(XP_MACOSX)
      rv = file->AppendNative("Mozilla"_ns);
  #  else   // defined(XP_MACOSX)
      rv = file->AppendNative(".mozilla"_ns);
-@@ -1051,11 +1052,12 @@
+@@ -914,11 +917,12 @@
+   nsCOMPtr<nsIFile> appRootDirFile;
+   nsCOMPtr<nsIFile> localDir;
+   nsAutoString appDirPath;
+   if (NS_FAILED(appFile->GetParent(getter_AddRefs(appRootDirFile))) ||
+       NS_FAILED(appRootDirFile->GetPath(appDirPath)) ||
+-      NS_FAILED(GetUserDataDirectoryHome(getter_AddRefs(localDir), true))) {
++      NS_FAILED(GetUserDataDirectoryHome(getter_AddRefs(localDir),
++                                         /* aLocal */ true))) {
+     return NS_ERROR_FAILURE;
+   }
+ 
+   int32_t dotIndex = appDirPath.RFind(u".app");
+   if (dotIndex == kNotFound) {
+@@ -1051,11 +1055,12 @@
    return NS_OK;
  }
  
@@ -143,7 +170,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    if (aLocal && gDataDirHomeLocal) {
      return gDataDirHomeLocal->Clone(aFile);
-@@ -1106,43 +1108,36 @@
+@@ -1106,43 +1111,37 @@
    }
    NS_ENSURE_SUCCESS(rv, rv);
  
@@ -191,13 +218,14 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  nsresult nsXREDirProvider::GetSysUserExtensionsDirectory(nsIFile** aFile) {
    nsCOMPtr<nsIFile> localDir;
 -  nsresult rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), false);
-+  nsresult rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), false, true);
++  nsresult rv = GetUserDataDirectoryHome(
++      getter_AddRefs(localDir), /* aLocal */ false, /* aForceLegacy */ true);
    NS_ENSURE_SUCCESS(rv, rv);
  
    rv = AppendSysUserExtensionPath(localDir);
    NS_ENSURE_SUCCESS(rv, rv);
  
-@@ -1240,10 +1235,198 @@
+@@ -1240,10 +1239,212 @@
  #  error "Don't know how to get XRE user extension path on your platform"
  #endif
    return NS_OK;
@@ -218,6 +246,15 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +
 +/* static */
 +nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
++  // This might happen in xpcshell so assert that it is indeed in a xpcshell
++  // test
++  if (!gAppData) {
++    mozilla::DebugOnly<const char*> xpcshell =
++        PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR");
++    MOZ_ASSERT(xpcshell, "gAppData can only be nullptr in xpcshell tests");
++    return NS_OK;
++  }
++
 +  if (gAppData->profile) {
 +    nsAutoCString profile;
 +    profile = gAppData->profile;
@@ -283,6 +320,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +    NS_ENSURE_SUCCESS(rv, false);
 +  }
 +
++  // If required, return the parent dir that may exists.
 +  if (aFile) {
 +    parentDir.forget(aFile);
 +  }
@@ -304,8 +342,12 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +                               getter_AddRefs(localDir));
 +  }
 +
-+  // Explicitely check for rv failure because in case we get passed an env
-+  // value but it's an invalid dir at the XDG specification level
++  // Explicitly check for rv failure because in case we get passed an env
++  // value that is an invalid dir by the XDG specification level, it should
++  // be ignored. Confere
++  // https://specifications.freedesktop.org/basedir-spec/0.8/
++  // that states "If an implementation encounters a relative path in any of
++  // these variables it should consider the path invalid and ignore it."
 +  if (NS_FAILED(rv) || !envValue || !*envValue) {
 +    MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(aHomeDir),
 +                                  getter_AddRefs(localDir)));
@@ -328,15 +370,8 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +/* static */
 +nsresult nsXREDirProvider::GetLegacyOrXDGConfigHome(const char* aHomeDir,
 +                                                    nsIFile** aFile) {
-+  bool wasFromEnv = false;
-+  nsresult rv = GetLegacyOrXDGEnvValue(aHomeDir, "XDG_CONFIG_HOME",
-+                                       ".config"_ns, aFile, &wasFromEnv);
-+  if (wasFromEnv) {
-+    MaybeRecordXdgTelemetry(legacyOrXDGHomeTelemetry::xdgConfigHome);
-+  } else {
-+    MaybeRecordXdgTelemetry(legacyOrXDGHomeTelemetry::xdgDefault);
-+  }
-+  return rv;
++  return GetLegacyOrXDGEnvValue(aHomeDir, "XDG_CONFIG_HOME", ".config"_ns,
++                                aFile);
 +}
 +
 +// Attempt to construct the HOME path depending on XDG or legacy status.
@@ -348,19 +383,14 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +
 +  bool exists = LegacyHomeExists(getter_AddRefs(parentDir));
 +  if (exists || IsForceLegacyHome() || aForceLegacy) {
-+    if (exists) {
-+      MaybeRecordXdgTelemetry(legacyOrXDGHomeTelemetry::legacyExists);
-+    } else {
-+      MaybeRecordXdgTelemetry(legacyOrXDGHomeTelemetry::legacyForced);
-+    }
 +    parentDir.forget(aFile);
 +    return NS_OK;
 +  }
 +
 +  nsCOMPtr<nsIFile> localDir;
 +
-+  // If the build was made with --with-user-appdir=.fooProfile is needs to be
-+  // applied and considered a legacy path
++  // If the build was made with --with-user-appdir=.fooProfile it needs to be
++  // applied and considered as a legacy path.
 +  nsAutoCString mozUserDir;
 +  mozUserDir = nsLiteralCString(MOZ_USER_DIR);
 +  if (mozUserDir.get()[0] == '.') {
@@ -368,6 +398,15 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +                                  getter_AddRefs(localDir)));
 +    MOZ_TRY(localDir->AppendRelativeNativePath(mozUserDir));
 +  } else {
++    // This might happen in xpcshell so assert that it is indeed in a xpcshell
++    // test
++    if (!gAppData) {
++      mozilla::DebugOnly<const char*> xpcshell =
++          PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR");
++      MOZ_ASSERT(xpcshell, "gAppData can only be nullptr in xpcshell tests");
++      return NS_OK;
++    }
++
 +    // If the build was made against a specific profile name, MOZ_APP_PROFILE=
 +    // then make sure we respect this and dont move to XDG directory
 +    if (gAppData->profile) {
@@ -381,10 +420,13 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 +    }
 +  }
 +
++  // If required return the parent directory that matches the profile root
++  // directory.
 +  if (aFile) {
 +    parentDir.forget(aFile);
 +  }
 +
++  // The profile root directory needs to exists at that point.
 +  MOZ_TRY(EnsureDirectoryExists(localDir));
 +
 +  return NS_OK;
@@ -396,7 +438,7 @@ diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
  
    // If there is no XREAppData then there is no information to use to build
    // the profile path so just do nothing. This should only happen in xpcshell
-@@ -1296,11 +1479,17 @@
+@@ -1296,11 +1497,17 @@
    NS_ENSURE_SUCCESS(rv, rv);
  #elif defined(XP_UNIX)
    nsAutoCString folder;

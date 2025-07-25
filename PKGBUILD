@@ -4,7 +4,7 @@
 
 _pkgname=firefox
 pkgname=$_pkgname-xdg
-pkgver=140.0.4
+pkgver=141.0
 pkgrel=1
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
@@ -90,35 +90,30 @@ source=(
   0001-Install-under-remoting-name.patch
   # Check https://phabricator.services.mozilla.com/D6995
   0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
-  # Check https://phabricator.services.mozilla.com/D252148
-  0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
   # https://blog.mozilla.org/security/2025/04/01/updated-gpg-key-for-signing-firefox-releases-2/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('4027beb34f43ce4da8c0053a1d740ec6a2e766dc8b700216316aa7adcc59e377'
+sha256sums=('80982a84bb7ca41a67ac073321de96f74e0c25f296d19ca432b11fc2a33535c8'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
-            '26748f984d4457fa62841b7e4d2479230dc86f7a7ceb184fc213968d203d4b1d'
-            '7f0ca79da747a60449880390231573f405210945e52698d6b689e1c881a90272')
-b2sums=('7cdcf5ff710860c1e0e2c7fb8e1ceebbe4211dfcb847b4f2e547eebf991214e00a8306452fa30899b7b731f1c89cd7af1efc005203871fc59e4bb597822b3b24'
+            '5b93a7b0a4b6a90a9578432419548fe9a2416758196bed51633a34037fc04430')
+b2sums=('c65fc01879474a0934343289430f8b6d4c38091b4d98dd0689e5f0c8782d6b200296da093ed6e9de4055d51b9bc6fb66164df70336ae5b2094096d717c9cf0bc'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
-        '0fcb66de56ffa5baeebd224157afd32980b152b3eeffd1eafc033ef194c6434db808a5ba2d81a23d25c12f94382293c04415e38ce9fc7c014f11e40e7b7c5d60'
-        'f017ad6cbb1017d3aebdc7ebeffb26aa3f1bf2a4e2bfde706e0e7b3029dde6a04aa2c10478a5e2cc06fe4ba59998235d487873181e70ca4be3c02f346039589e')
+        '1d5a6d8e4b7bb1609e8e3e20e7d10fa4036db7f802779f4303139a7038ff1c54446c2f3eac520dbeacc391dbfe2fe5c316c5bc948f27956bf9a4af3b33a76efd')
 
-# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
+# Google API keys (see https://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
-# get your own set of keys. Feel free to contact foutrelis@archlinux.org for
-# more information.
+# get your own set of keys.
 _google_api_key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM
 
 prepare() {
@@ -131,11 +126,8 @@ prepare() {
   # Move data dir to ~/.config/mozilla
   # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use old place instead.
   patch -Np1 -F5 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
-  patch -Np1 -F4 -i ../0003-Bug-1969879-Handle-XDG_CONFIG_HOME-in-crash_helper_server.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs
-  sed -i -e 's|, &wasFromEnv||' -e '1342 i \/*' -e '1359 i \/*' -e '1347 i *\/' -e '1364 i *\/' \
-    toolkit/xre/nsXREDirProvider.cpp
   # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
