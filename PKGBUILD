@@ -5,7 +5,7 @@
 _pkgname=firefox
 pkgname=$_pkgname-xdg
 pkgver=141.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
 arch=(x86_64)
@@ -128,6 +128,8 @@ prepare() {
   patch -Np1 -F5 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
   sed -i 's|dirs::config_dir()?.join(".mozilla")|dirs::config_dir()?.join("mozilla")|' \
     toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+  sed -i 's|".mozilla"|"mozilla"|g' \
+    toolkit/xre/nsXREDirProvider.cpp
   # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
