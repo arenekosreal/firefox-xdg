@@ -1,0 +1,35 @@
+diff --git a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+index fb42e2ec66..05cdddea6d 100644
+--- a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
++++ b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
+@@ -39,7 +39,7 @@ fn guess_user_app_data_dir() -> Option<PathBuf> {
+             let data_path = if std::env::var_os("MOZ_LEGACY_HOME").is_some() || exists(&legacy_data).ok()? {
+                 legacy_data
+             } else {
+-                dirs::config_dir()?.join(".mozilla").join(config::MOZ_APP_NAME)
++                dirs::config_dir()?.join("mozilla").join(config::MOZ_APP_NAME)
+             };
+             Some(data_path)
+         } else if #[cfg(target_os = "macos")] {
+diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
+index 9c94cb8808..f82b06420a 100644
+--- a/toolkit/xre/nsXREDirProvider.cpp
++++ b/toolkit/xre/nsXREDirProvider.cpp
+@@ -368,7 +368,7 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
+ #  if defined(XP_MACOSX)
+     rv = file->AppendNative("Mozilla"_ns);
+ #  else   // defined(XP_MACOSX)
+-    rv = file->AppendNative(".mozilla"_ns);
++    rv = file->AppendNative("mozilla"_ns);
+ #  endif  // defined(XP_MACOSX)
+   }
+ #endif  // defined(XP_UNIX) || defined(XP_MACOSX)
+@@ -1202,7 +1202,7 @@ nsresult nsXREDirProvider::AppendSysUserExtensionPath(nsIFile* aFile) {
+ 
+ #elif defined(XP_UNIX)
+ 
+-  static const char* const sXR = ".mozilla";
++  static const char* const sXR = "mozilla";
+   rv = aFile->AppendNative(nsDependentCString(sXR));
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
