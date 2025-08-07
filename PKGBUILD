@@ -90,7 +90,7 @@ source=(
   0001-Install-under-remoting-name.patch
   # Check https://phabricator.services.mozilla.com/D6995
   0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
-  0003-rename-extra-hardcoded-.mozilla-path.diff
+  0003-remove-some-hardcoded-blocker-for-new-config-home.diff
 )
 validpgpkeys=(
   # Mozilla Software Releases <release@mozilla.com>
@@ -104,7 +104,7 @@ sha256sums=('c33937fe2f6ad29af3de8f1a128c054afbd64821f702bf98d9f4079b97d37f3a'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             '883ca2fa723a7572269d18559d5b82412782ad63e5dd3820eeb0540e3fe34314'
             '5b93a7b0a4b6a90a9578432419548fe9a2416758196bed51633a34037fc04430'
-            '08a8bd25eb361decf6b480c1b8fe3ed2f9bf027052da4cd86ebdcd8d7c29906c')
+            '600b094357218cf206dfd6ef8715cb88a4af4177ef1afe284057197d68268dad')
 b2sums=('fb156b8812c92877eda189b77e9189081d9da144a4043abed1de6abdca49d76dd416c9206057ab94d6ee2fd1312748abb0cef60ffcc9ac17b88edf468f4a64b3'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
@@ -112,7 +112,7 @@ b2sums=('fb156b8812c92877eda189b77e9189081d9da144a4043abed1de6abdca49d76dd416c92
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         '8a894b01e405b628877483e40e9b018647977cb053b6af02afc901ed24d6e1f767f3db8c321070e33aea4a05ba16f1eb47ae600e5299b5f9caad03d20ba38cf5'
         '1d5a6d8e4b7bb1609e8e3e20e7d10fa4036db7f802779f4303139a7038ff1c54446c2f3eac520dbeacc391dbfe2fe5c316c5bc948f27956bf9a4af3b33a76efd'
-        '328e57121c937a1fca4b99af9fea692e206d7ac53a506fb8d2bceb00b3f07be2cdf58e7039e5f1eb533432f02a62c240ea36fa5b05076719aecd0fb11c816ba7')
+        '3c6cf1a45cae6005a333d1b7674ff625aa7b8fd0af0dea416816a2d276b0fd35cf8275f6eebc453009afad6506570fa41e2296c10dd000f80bcad57daf59b1b1')
 
 # Google API keys (see https://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -129,7 +129,7 @@ prepare() {
   # Move data dir to ~/.config/mozilla
   # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use old place instead.
   patch -Np1 -F5 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
-  patch -Np1 -i ../0003-rename-extra-hardcoded-.mozilla-path.diff
+  patch -Np1 -i ../0003-remove-some-hardcoded-blocker-for-new-config-home.diff
   # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.0.0|g' ./python/sites/mach.txt
   #sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.23.0|g' ./python/sites/mach.txt
