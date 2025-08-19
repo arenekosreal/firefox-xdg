@@ -51,6 +51,7 @@ makedepends=(
   mesa
   nasm
   nodejs
+  onnxruntime
   python
   rust
   unzip
@@ -66,6 +67,7 @@ optdepends=(
   'hunspell-en_US: Spell checking, American English'
   'libnotify: Notification integration'
   'networkmanager: Location detection via available WiFi networks'
+  'onnxruntime: Local machine learning features such as smart tab groups'
   'speech-dispatcher: Text-to-Speech'
   'xdg-desktop-portal: Screensharing with Wayland'
 )
@@ -243,6 +245,10 @@ app.distributor.channel=$pkgname
 app.partner.archlinux=archlinux
 END
 
+  # Link up system ONNX runtime
+  ln -srv "$pkgdir/usr/lib/libonnxruntime.so" -t "$pkgdir/usr/lib/$pkgname"
+
+  # Install desktop icons and metadata
   local i theme=official
   for i in 16 22 24 32 48 64 128 256; do
     install -Dvm644 browser/branding/$theme/default$i.png \
