@@ -268,7 +268,7 @@ app.partner.archlinux=archlinux
 END
 
   # Link up system ONNX runtime
-  ln -srv "$pkgdir/usr/lib/libonnxruntime.so" -t "$pkgdir/usr/lib/$pkgname"
+  ln -srv "$pkgdir/usr/lib/libonnxruntime.so" -t "$pkgdir/usr/lib/$_pkgname"
 
   # Install desktop icons and metadata
   local i theme=official
