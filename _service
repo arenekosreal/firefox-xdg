@@ -1,8 +1,8 @@
 <services>
   <service name="download_url">
-    <param name="url">https://archive.mozilla.org/pub/firefox/releases/143.0/source/firefox-143.0.source.tar.xz</param>
+    <param name="url">https://archive.mozilla.org/pub/firefox/releases/143.0.1/source/firefox-143.0.1.source.tar.xz</param>
   </service>
   <service name="download_url">
-    <param name="url">https://archive.mozilla.org/pub/firefox/releases/143.0/source/firefox-143.0.source.tar.xz.asc</param>
+    <param name="url">https://archive.mozilla.org/pub/firefox/releases/143.0.1/source/firefox-143.0.1.source.tar.xz.asc</param>
   </service>
 </services>
