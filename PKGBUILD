@@ -4,7 +4,7 @@
 
 _pkgname=firefox
 pkgname=$_pkgname-xdg
-pkgver=143.0.4
+pkgver=144.0
 pkgrel=1
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
@@ -99,22 +99,22 @@ validpgpkeys=(
   # https://blog.mozilla.org/security/2025/04/01/updated-gpg-key-for-signing-firefox-releases-2/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('9e47c9f24c0e01a67f7fb03349ac8021a692f088f54bd127c356be0835c8b61a'
+sha256sums=('612064a55610f0dfddfbff681930bea16f7593b40bd70c86e0518dc85d096b1f'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             'ef63a12975f108f30b00bb3290d9ca76f311d8af9c1d5dfc0d8335ad57e8f77c'
             'af37b6b4befa729f6fd6bcd5937897fcf93b7d71006e3c10bb596185cb1582f9'
-            '600b094357218cf206dfd6ef8715cb88a4af4177ef1afe284057197d68268dad')
-b2sums=('b498ad4bf1cf8763167c63dd707063d21bb2679ac7a141da3aca4f76bfba545d65606b62d766e2239b819f06231e791e63acc64b11fbbbbca09a02c48281b4fc'
+            '6bc00e074805ac7079d1339273ec0f248a52e707c226c01d7aabdb7b3ae1fe46')
+b2sums=('01692c4417ffc38ce7e3c0647657906f8e416160d842227b23b8d0231d9bf73464c1effb2a2485ab2327b1183a49a6c35937d907fc47ae9436efd29e9cb97832'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         'ff0ba11844e99ab1b1fed91d70c6f45837198ba43e77313c8b9c48a621e40c459953fc35283b6b6eafb5641510a5ce1e18ebda4d7d076f8212810391c0a9234b'
         '1773fc7ea7236d611d829686d5ac1b76bea75df71ff16d1d1927e54ea81711a9398a2fb3fe2a19d76cf072e77d083d98e088856841ccf729a2341458cd8a1e03'
-        '3c6cf1a45cae6005a333d1b7674ff625aa7b8fd0af0dea416816a2d276b0fd35cf8275f6eebc453009afad6506570fa41e2296c10dd000f80bcad57daf59b1b1')
+        'c2be1fd8f7d2e9d822f18f77d5849470268337fd8a602fe547594541f36fec86b01fa0b0e14cf9e0994ddd3da709a6205ed93c9b71676fa83157e92634378f49')
 
 # Google API keys (see https://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -134,7 +134,7 @@ prepare() {
   patch -Np1 -i ../0003-remove-some-hardcoded-blocker-for-new-config-home.diff
   # Allow building with system python-psutil python-zstandard python-typing_extensions
   sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.1.0|g' ./python/sites/mach.txt
-  sed -i 's|zstandard>=0.11.1,<=0.23.0|zstandard>=0.11.1,<=0.25.0|g' ./python/sites/mach.txt
+  sed -i 's|zstandard>=0.11.1,<=0.24.0|zstandard>=0.11.1,<=0.25.0|g' ./python/sites/mach.txt
   sed -i 's|vendored:third_party/python/typing_extensions||g' ./python/sites/mach.txt
 
   echo -n "$_google_api_key" >google-api-key

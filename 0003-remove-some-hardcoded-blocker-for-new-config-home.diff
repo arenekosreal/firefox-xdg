@@ -1,16 +1,4 @@
-diff '--color=auto' -u -r a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs
---- a/toolkit/crashreporter/crash_helper_server/src/logging/env.rs	2025-08-07 12:17:16.614171020 +0800
-+++ b/toolkit/crashreporter/crash_helper_server/src/logging/env.rs	2025-08-07 12:18:27.876878482 +0800
-@@ -39,7 +39,7 @@
-             let data_path = if std::env::var_os("MOZ_LEGACY_HOME").is_some() || exists(&legacy_data).ok()? {
-                 legacy_data
-             } else {
--                dirs::config_dir()?.join(".mozilla").join(config::MOZ_APP_NAME)
-+                dirs::config_dir()?.join("mozilla").join(config::MOZ_APP_NAME)
-             };
-             Some(data_path)
-         } else if #[cfg(target_os = "macos")] {
-diff '--color=auto' -u -r a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
+diff -u -r a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
 --- a/toolkit/xre/nsXREDirProvider.cpp	2025-08-07 12:17:16.696603283 +0800
 +++ b/toolkit/xre/nsXREDirProvider.cpp	2025-08-07 12:19:45.590146145 +0800
 @@ -366,12 +366,12 @@
