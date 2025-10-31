@@ -133,7 +133,7 @@ prepare() {
   patch -Np1 -F5 -i ../0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
   patch -Np1 -i ../0003-remove-some-hardcoded-blocker-for-new-config-home.diff
   # Allow building with system python-psutil python-zstandard python-typing_extensions
-  sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.1.0|g' ./python/sites/mach.txt
+  sed -i 's|psutil>=5.4.2,<=5.9.4|psutil>=5.4.2,<=7.1.1|g' ./python/sites/mach.txt
   sed -i 's|zstandard>=0.11.1,<=0.24.0|zstandard>=0.11.1,<=0.25.0|g' ./python/sites/mach.txt
   sed -i 's|vendored:third_party/python/typing_extensions||g' ./python/sites/mach.txt
 
