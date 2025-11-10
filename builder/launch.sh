@@ -53,6 +53,8 @@ readonly -a QEMU_IMG=(qemu-img)
 readonly -a EXIT=(exit)
 readonly -a PACSTRAP=(pacstrap -K)
 readonly -a PACSTRAP_ROOT=("${SUDO[@]}" "${PACSTRAP[@]}")
+readonly -a ARCH_CHROOT=(arch-chroot)
+readonly -a ARCH_CHROOT_ROOT=("${SUDO[@]}" "${ARCH_CHROOT[@]}")
 readonly -a CP=(cp --recursive)
 readonly -a CP_ROOT=("${SUDO[@]}" "${CP[@]}")
 readonly -a ID=(id)
@@ -82,6 +84,8 @@ readonly -a KILL_ROOT=("${SUDO[@]}" "${KILL[@]}")
 readonly -a SORT=(sort -u)
 readonly -a UNSHARE=(unshare --map-root-user --map-auto --)
 readonly -a VIRTIOFSD=("${UNSHARE[@]}" /usr/lib/virtiofsd --announce-submounts --sandbox chroot)
+readonly -a TOUCH=(touch)
+readonly -a TOUCH_ROOT=("${SUDO[@]}" "${TOUCH[@]}")
 # Variables:
             SCRIPT_DIR=$("${READLINK[@]}" -e "$("${DIRNAME[@]}" "$0")")
 readonly    SCRIPT_DIR
@@ -189,6 +193,10 @@ function __create_qemu() {
         } | "${TEE_ROOT[@]}" -a "$TMP_MOUNTPOINT/etc/fstab"
         "${ECHO[@]}" "Copying systemd files..."
         "${CP_ROOT[@]}" "$SCRIPT_DIR/guest/." "$TMP_MOUNTPOINT"
+        "${ECHO[@]}" "Re-enabling fallback initramfs support..."
+        "${TOUCH_ROOT[@]}" "$TMP_MOUNTPOINT/etc/vconsole.conf"
+        "${SED_ROOT[@]}" -i 's/#PRESET/PRESET/;s/#fallback_image/fallback_image/' "$TMP_MOUNTPOINT/etc/mkinitcpio.d/linux.preset"
+        "${ARCH_CHROOT_ROOT[@]}" "$TMP_MOUNTPOINT" mkinitcpio -P
         "${ECHO[@]}" "Saving kernel and initramfs for loading by QEMU directly..."
         local VM_BOOT="$DATA_DIR/boot"
         "${MKDIR[@]}" "$VM_BOOT"
