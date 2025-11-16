@@ -90,6 +90,7 @@ source=(
   $_pkgname.desktop
   org.mozilla.$_pkgname.metainfo.xml
   0001-Install-under-remoting-name.patch
+  0002-Bug-1995035-Allow-F_DUPFD_QUERY-in-the-Linux-sandbox.patch
   # Check https://phabricator.services.mozilla.com/D6995
   0002-Bug-259356-Add-support-for-the-XDG-Base-Directory-Specification.diff
   0003-remove-some-hardcoded-blocker-for-new-config-home.diff
@@ -105,6 +106,7 @@ sha256sums=('eb0828db0e942ad345c725e2cbf2ed3b90d23771b054b6db0ded57cfa10b8c9c'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
             '23f557fa7989adcae03cc9458d94716981dbcf0e9d6d52a289a2426e50b4b785'
             'ef63a12975f108f30b00bb3290d9ca76f311d8af9c1d5dfc0d8335ad57e8f77c'
+            '3b8bae25a05e6075c7025be387ee8e1a2dc57c19d89d3028b457128530f6c24b'
             'af37b6b4befa729f6fd6bcd5937897fcf93b7d71006e3c10bb596185cb1582f9'
             '6bc00e074805ac7079d1339273ec0f248a52e707c226c01d7aabdb7b3ae1fe46')
 b2sums=('a8007d06dce77197dfb40ab9a759287b6bcff4e56d1b2c7acfed9475aaa2f936948534d6e726a158550c70a28bad8ec8c7f1b99ca8165198c1952a484869b6c9'
@@ -113,6 +115,7 @@ b2sums=('a8007d06dce77197dfb40ab9a759287b6bcff4e56d1b2c7acfed9475aaa2f936948534d
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
         '1a7fc030b1051df00df1b2f5b247b8c658de6cdfba0788041c830da3aaaa6ac974ab684e05feb80672aa2d2c22294cacfa93a71dc664b3e60becdd65e879fcee'
         'ff0ba11844e99ab1b1fed91d70c6f45837198ba43e77313c8b9c48a621e40c459953fc35283b6b6eafb5641510a5ce1e18ebda4d7d076f8212810391c0a9234b'
+        'e97f22602666465d418cbbb260cf8de936ca101b2c800247b45a63444c36fadee2c0dc8b93ee203409e27fb99a82e24d8c7bd20a7e53eddc979cd21b7cdaedde'
         '1773fc7ea7236d611d829686d5ac1b76bea75df71ff16d1d1927e54ea81711a9398a2fb3fe2a19d76cf072e77d083d98e088856841ccf729a2341458cd8a1e03'
         'c2be1fd8f7d2e9d822f18f77d5849470268337fd8a602fe547594541f36fec86b01fa0b0e14cf9e0994ddd3da709a6205ed93c9b71676fa83157e92634378f49')
 
@@ -127,6 +130,9 @@ prepare() {
 
   # Make different channels installable in parallel
   patch -Np1 -i ../0001-Install-under-remoting-name.patch
+
+  # Fix RDD crashes with Mesa 25.3
+  patch -Np1 -i ../0002-Bug-1995035-Allow-F_DUPFD_QUERY-in-the-Linux-sandbox.patch
 
   # Move data dir to ~/.config/mozilla
   # Set MOZ_LEGACY_HOME environment or create ~/.mozilla to use old place instead.
