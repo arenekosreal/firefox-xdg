@@ -4,7 +4,7 @@
 
 _pkgname=firefox
 pkgname=$_pkgname-xdg
-pkgver=145.0.1
+pkgver=145.0.2
 pkgrel=1
 pkgdesc="Fast, Private & Safe Web Browser but with .mozilla moved to .config"
 url="https://www.mozilla.org/firefox/"
@@ -100,7 +100,7 @@ validpgpkeys=(
   # https://blog.mozilla.org/security/2025/04/01/updated-gpg-key-for-signing-firefox-releases-2/
   14F26682D0916CDD81E37B6D61B7B526D98F0353
 )
-sha256sums=('b48115bd304ff0169fefc488226caf4053e04cc2aa83b1a9f4ac85fbaa9ff457'
+sha256sums=('d7c5b4c6b5d47b51f2b548403defaf53b1072c621ee3fa11c77f86b3cf84858d'
             'SKIP'
             'a9b8b4a0a1f4a7b4af77d5fc70c2686d624038909263c795ecc81e0aec7711e9'
             '71fe797430198ac8c00b538dce537284cf526e48be0496698cf5a980d70c16da'
@@ -109,7 +109,7 @@ sha256sums=('b48115bd304ff0169fefc488226caf4053e04cc2aa83b1a9f4ac85fbaa9ff457'
             '3b8bae25a05e6075c7025be387ee8e1a2dc57c19d89d3028b457128530f6c24b'
             'af37b6b4befa729f6fd6bcd5937897fcf93b7d71006e3c10bb596185cb1582f9'
             '6bc00e074805ac7079d1339273ec0f248a52e707c226c01d7aabdb7b3ae1fe46')
-b2sums=('0e76fefc9aa2f80dbe1ab21a1c576f5199a1c5b33d5ab059d6047dc161e6bfb27e64a58c676ce805a297565519321a548bbad80cfd1d6effc8e2e34299f3a116'
+b2sums=('ef63ec9af068f221c9ef7cc4cb86ddd85f20984f5fcd313cd6aeefd2827ca9eed0b9b827910d37e5352cb84cd020cd77db9239365ab6a056a780036c69b19515'
         'SKIP'
         '63a8dd9d8910f9efb353bed452d8b4b2a2da435857ccee083fc0c557f8c4c1339ca593b463db320f70387a1b63f1a79e709e9d12c69520993e26d85a3d742e34'
         '2c7936949ef922307fb593bd0480a13bde2eab8ae24fc89071d809d6659384705f9b7838b1ae8bc46b98a152ba01fcffad606d4c84796ad9bfaaf20166f0a0fd'
