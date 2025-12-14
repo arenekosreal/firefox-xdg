@@ -8,6 +8,7 @@
 # Package Requirements:
 #    arch-install-scripts
 #    coreutils
+#    curl
 #    e2fsprogs
 #    findutils
 #    gptfdisk
@@ -40,7 +41,8 @@ readonly -a MKDIR=(mkdir -p)
 readonly -a MKDIR_ROOT=("${SUDO[@]}" "${MKDIR[@]}")
 readonly -a GREP=(grep)
 readonly -a CUT=(cut)
-readonly -a XARGS=(xargs --no-run-if-empty --verbose)
+readonly -a XARGS=(xargs --no-run-if-empty)
+readonly -a XARGS_VERBOSE=("${XARGS[@]}" --verbose)
 readonly -a MAKEPKG=(makepkg)
 readonly -a PUSHD=(pushd)
 readonly -a POPD=(popd)
@@ -51,7 +53,7 @@ readonly -a UMOUNT=(umount)
 readonly -a UMOUNT_ROOT=("${SUDO[@]}" "${UMOUNT[@]}")
 readonly -a QEMU_IMG=(qemu-img)
 readonly -a EXIT=(exit)
-readonly -a PACSTRAP=(pacstrap -K)
+readonly -a PACSTRAP=(pacstrap -K -c)
 readonly -a PACSTRAP_ROOT=("${SUDO[@]}" "${PACSTRAP[@]}")
 readonly -a ARCH_CHROOT=(arch-chroot)
 readonly -a ARCH_CHROOT_ROOT=("${SUDO[@]}" "${ARCH_CHROOT[@]}")
@@ -86,6 +88,8 @@ readonly -a UNSHARE=(unshare --map-root-user --map-auto --)
 readonly -a VIRTIOFSD=("${UNSHARE[@]}" /usr/lib/virtiofsd --announce-submounts --sandbox chroot)
 readonly -a TOUCH=(touch)
 readonly -a TOUCH_ROOT=("${SUDO[@]}" "${TOUCH[@]}")
+readonly -a PACMAN=(pacman)
+readonly -a CURL=(curl --location)
 # Variables:
             SCRIPT_DIR=$("${READLINK[@]}" -e "$("${DIRNAME[@]}" "$0")")
 readonly    SCRIPT_DIR
@@ -118,6 +122,7 @@ readonly    VM_CONSOLE_SOCKET="$USER_RUNTIME/console.socket"
 readonly    VM_QMP_SOCKET="$USER_RUNTIME/qmp.socket"
 readonly    VM_SERVICE="$ID_BUILDER.service"
 readonly    SCRIPT_NAME="$0"
+readonly    PACMAN_CONF="$DATA_DIR/pacman.conf"
 readonly    _ERROR_COMMON_ERROR=1
 readonly    _ERROR_NO_NBD_DEVICE=2
 
@@ -181,7 +186,11 @@ function __create_qemu() {
         "${ECHO[@]}" "Preparing rootfs..."
         "${MOUNT_ROOT[@]}" "/dev/${NBD}p2" "$TMP_MOUNTPOINT"
         "${PUSHD[@]}" "$VIRTIOFSD_STARTDIR_PATH"
-        "${MAKEPKG[@]}" --printsrcinfo | "${GREP[@]}" -P '^\tmakedepends|^\tdepends' | "${CUT[@]}" -d = -f 2- | "${XARGS[@]}" "${PACSTRAP_ROOT[@]}" "$TMP_MOUNTPOINT" base base-devel linux
+        local PACMAN_VERSION
+        PACMAN_VERSION="$(LANG=C "${PACMAN[@]}" --query --info pacman | "${GREP[@]}" Version | "${CUT[@]}" --delimiter : --fields 2 | "${XARGS[@]}")"
+        "${ECHO[@]}" "Getting default pacman config for version $PACMAN_VERSION..."
+        "${CURL[@]}" "https://gitlab.archlinux.org/archlinux/packaging/packages/pacman/-/raw/$PACMAN_VERSION/pacman.conf" -o "$PACMAN_CONF"
+        "${MAKEPKG[@]}" --printsrcinfo | "${GREP[@]}" -P '^\tmakedepends|^\tdepends' | "${CUT[@]}" -d = -f 2- | "${XARGS_VERBOSE[@]}" "${PACSTRAP_ROOT[@]}" -C "$PACMAN_CONF" "$TMP_MOUNTPOINT" base base-devel linux
         "${POPD[@]}"
         "${SED_ROOT[@]}" -i "3 i auth sufficient pam_listfile.so item=tty sense=allow file=/etc/securetty onerr=fail apply=root" \
             "$TMP_MOUNTPOINT/etc/pam.d/login"

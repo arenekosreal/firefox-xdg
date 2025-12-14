@@ -7,3 +7,4 @@ src
 # VM
 /builder/*.qcow2
 /builder/boot
+/builder/pacman.conf
